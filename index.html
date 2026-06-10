@@ -282,6 +282,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',syste
 .account-card .ac-st::before{content:'';width:6px;height:6px;border-radius:50%;background:#34C759}
 .pli .sub{font-size:10px;color:#8E8E93;margin-top:2px}
 .pli.danger .ptx{color:#FF3B30}
+.orgtoggle{position:absolute;top:122px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;z-index:401;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);transition:all 0.2s;padding:0}
+.orgtoggle:hover{transform:scale(1.06)}
+.orgtoggle:active{transform:scale(0.94)}
+.orgtoggle.on{background:linear-gradient(135deg,#FFD60A,#FF9500);border-color:#FFD60A;box-shadow:0 0 0 3px rgba(255,214,10,0.25),0 2px 8px rgba(255,149,0,0.45)}
 .vtoggle{position:absolute;top:100px;right:13px;width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,0.95);border:none;font-size:19px;cursor:pointer;z-index:50;box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center}
 .vtoggle:active{transform:scale(0.95)}
 .vtoggle.sat{background:rgba(0,0,0,0.8);color:#fff}
@@ -384,7 +388,7 @@ button:focus,input:focus{outline:none}
 <input placeholder="Cerca luoghi e piazze..."/>
 <div class="cpill" onclick="toggleCityPicker(event)"><span id="city-name">Bologna</span><span style="font-size:7px;opacity:0.85">▼</span></div>
 </div>
-<div class="opill" id="opill">👑 <span>Modalità Organizzatore</span></div>
+<div class="opill" id="opill">👑 <span>ACCESSO ILLIMITATO ATTIVO</span></div>
 <div class="mstatus" id="mstatus"><div class="dot"></div><span id="mstext">Sei a Piazza Maggiore</span></div>
 </div>
 <div class="cpicker" id="cpicker">
@@ -393,6 +397,7 @@ button:focus,input:focus{outline:none}
 <div class="copt" data-city="sassuolo" onclick="selectCity('sassuolo')"><span><span class="ic">🟢</span>Sassuolo</span><span class="cn">12 caselle</span></div>
 </div>
 <button class="vtoggle" id="vtoggle" onclick="toggleMapView()" title="Cambia vista mappa">🛰️</button>
+<button class="orgtoggle" id="orgtoggle" onclick="toggleOrg()" title="Modalità Organizzatore — accesso illimitato">👑</button>
 <div id="map"></div>
 <div class="dtool" id="dtool"><div class="dl">Simula posizione</div><div id="dbtns"></div></div>
 <div class="sheet" id="sheet">
@@ -716,6 +721,12 @@ async function doSSO(provider){
 }
 function finishAuth(user,msg){
   state.user=user;
+  // Auto-enable Organizer for founder accounts
+  const FOUNDER_EMAILS=['gabri.barigazzi@gmail.com','24startingup@gmail.com'];
+  if(user.email && FOUNDER_EMAILS.includes(user.email.toLowerCase())){
+    state.isOrg=true;
+    setTimeout(()=>{try{applyOrgUI()}catch(e){}},100);
+  }
   try{localStorage.setItem('24h_auth',JSON.stringify(user))}catch(e){}
   document.getElementById('scr-auth').classList.remove('active');
   updateAccountUI();
@@ -958,7 +969,8 @@ function toggleOrg(){
 function toggleMapView(){if(!map)return;if(state.mapView==='satellite'){map.removeLayer(window.__tileSat);window.__tileStreet.addTo(map);state.mapView='street';}else{map.removeLayer(window.__tileStreet);window.__tileSat.addTo(map);state.mapView='satellite';}saveState();const b=document.getElementById('vtoggle');if(b){b.textContent=state.mapView==='street'?'🛰️':'🗺️';b.classList.toggle('sat',state.mapView==='satellite')}showToast(state.mapView==='satellite'?'Vista satellitare attiva':'Vista mappa attiva',1500);}
 
 function applyOrgUI(){
-  const sw=document.getElementById('orgsw'),cr=document.getElementById('crown'),pl=document.getElementById('opill');
+  const sw=document.getElementById('orgsw'),cr=document.getElementById('crown'),pl=document.getElementById('opill'),ot=document.getElementById('orgtoggle');
+  if(ot)ot.classList.toggle('on',state.isOrg);
   if(state.isOrg){sw.classList.add('on');cr.classList.remove('hidden');pl.classList.add('show')}
   else{sw.classList.remove('on');cr.classList.add('hidden');pl.classList.remove('show')}
 }
