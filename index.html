@@ -258,6 +258,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',syste
 .auth-trust{margin-top:18px;padding:14px;background:rgba(0,122,255,0.08);border:1px solid rgba(0,122,255,0.18);border-radius:12px;display:flex;flex-direction:column;gap:7px}
 .auth-trust .ti{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.4}
 .auth-trust .ti .ic{flex-shrink:0;width:18px;font-size:13px}
+
+.auth-banner{padding:11px 13px;border-radius:11px;font-size:12.5px;line-height:1.4;margin-bottom:12px;display:none;align-items:flex-start;gap:8px}
+.auth-banner.show{display:flex}
+.auth-banner.err{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.3);color:#FF6B6B}
+.auth-banner.ok{background:rgba(52,199,89,0.12);border:1px solid rgba(52,199,89,0.3);color:#65D484}
+.auth-banner.info{background:rgba(0,122,255,0.12);border:1px solid rgba(0,122,255,0.3);color:#5DAEFF}
+.auth-banner .bi{flex-shrink:0;font-size:14px;margin-top:1px}
+.auth-banner .bb{flex:1}
+.auth-banner .bb b{display:block;margin-bottom:2px;font-weight:700}
+.auth-banner button{background:rgba(255,255,255,0.15);border:none;color:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;margin-top:6px;font-family:inherit}
+.sso-btn.coming{position:relative;opacity:0.55;cursor:not-allowed}
+.sso-btn.coming::after{content:'PRESTO';position:absolute;top:6px;right:8px;background:rgba(0,0,0,0.7);color:#fff;font-size:8px;font-weight:800;padding:2px 5px;border-radius:3px;letter-spacing:0.05em}
+.cta.loading{opacity:0.7;pointer-events:none;position:relative}
+.cta.loading::after{content:'';position:absolute;right:14px;top:50%;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;transform:translateY(-50%);animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
 /* Logged-in indicator */
 .account-card{background:linear-gradient(135deg,rgba(0,122,255,0.12),rgba(88,86,214,0.12));border:1px solid rgba(0,122,255,0.2);border-radius:14px;padding:12px 14px;margin:0 13px 13px;display:flex;align-items:center;gap:12px}
 .account-card .ac-i{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#34C759,#30B0C7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
@@ -333,25 +348,27 @@ button:focus,input:focus{outline:none}
 <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Accedi</div>
 <div class="auth-tab" data-tab="signup" onclick="switchAuthTab('signup')">Registrati</div>
 </div>
+<div class="auth-banner" id="auth-banner"><span class="bi" id="auth-banner-icon">ℹ️</span><span class="bb" id="auth-banner-body"></span></div>
 <div class="auth-form" id="auth-login">
 <input class="auth-input" type="email" id="li-email" placeholder="Email" autocomplete="email">
-<div class="pw-wrap"><input class="auth-input" type="password" id="li-pw" placeholder="Password" autocomplete="current-password"><button class="pw-eye" type="button" onclick="togglePw('li-pw',this)">👁</button></div>
-<button class="cta blue" onclick="doLogin()">Accedi</button>
-<a class="auth-link" onclick="showToast('Email di recupero inviata (demo)')">Password dimenticata?</a>
+<div class="pw-wrap"><input class="auth-input" type="password" id="li-pw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')doLogin()"><button class="pw-eye" type="button" onclick="togglePw(\'li-pw\',this)">👁</button></div>
+<button class="cta blue" id="btn-login" onclick="doLogin()">Accedi</button>
+<a class="auth-link" onclick="doForgotPassword()">Password dimenticata?</a>
 </div>
 <div class="auth-form hidden" id="auth-signup">
 <input class="auth-input" type="text" id="su-name" placeholder="Come ti chiami">
 <input class="auth-input" type="email" id="su-email" placeholder="Email" autocomplete="email">
-<div class="pw-wrap"><input class="auth-input" type="password" id="su-pw" placeholder="Crea una password sicura" autocomplete="new-password" oninput="updatePwStrength()"><button class="pw-eye" type="button" onclick="togglePw('su-pw',this)">👁</button></div>
+<div class="pw-wrap"><input class="auth-input" type="password" id="su-pw" placeholder="Crea una password sicura" autocomplete="new-password" oninput="updatePwStrength()"><button class="pw-eye" type="button" onclick="togglePw(\'su-pw\',this)">👁</button></div>
 <div class="pw-strength"><div class="pw-strength-bar" id="su-pw-bar"></div></div>
 <div class="pw-hint" id="su-pw-hint">Min 8 caratteri, una maiuscola, un numero</div>
 <input class="auth-input" type="date" id="su-dob">
-<label class="auth-check"><input type="checkbox" id="su-tos"><span>Ho 16+ anni e accetto <a onclick="showLegal('tos')">Termini</a> e <a onclick="showLegal('privacy')">Privacy</a></span></label>
-<button class="cta blue" onclick="doSignup()">Crea account</button>
+<label class="auth-check"><input type="checkbox" id="su-tos"><span>Ho 16+ anni e accetto <a onclick="showLegal(\'tos\')">Termini</a> e <a onclick="showLegal(\'privacy\')">Privacy</a></span></label>
+<button class="cta blue" id="btn-signup" onclick="doSignup()">Crea account</button>
 </div>
 <div class="auth-or">oppure</div>
-<button class="sso-btn apple" onclick="doSSO('Apple')"> Continua con Apple</button>
-<button class="sso-btn google" onclick="doSSO('Google')">G  Continua con Google</button>
+<button class="sso-btn apple coming" onclick="showAuthBanner(\'info\',\'Apple Sign In è in arrivo. Per ora usa email e password — funziona identicamente.\')"> Continua con Apple</button>
+<button class="sso-btn google coming" onclick="showAuthBanner(\'info\',\'Google Sign In è in arrivo. Per ora usa email e password — funziona identicamente.\')">G  Continua con Google</button>
+<a class="auth-link" style="margin-top:14px" onclick="doDemoMode()">Continua come ospite (modalità demo)</a>
 <div class="auth-trust">
 <div class="ti"><span class="ic">🔐</span><span><strong>End-to-end encryption</strong> · Password mai salvata in chiaro, sempre hashed.</span></div>
 <div class="ti"><span class="ic">🇪🇺</span><span><strong>Server in UE</strong> · Conforme GDPR. I tuoi dati non lasciano l\'Europa.</span></div>
@@ -579,49 +596,123 @@ function updatePwStrength(){
   hint.textContent=p?labels[s]:'Min 8 caratteri, una maiuscola, un numero';
   hint.style.color=p?colors[s]:'rgba(255,255,255,0.5)';
 }
+function showAuthBanner(kind,msg,extra){
+  const b=document.getElementById('auth-banner');
+  const i=document.getElementById('auth-banner-icon');
+  const body=document.getElementById('auth-banner-body');
+  if(!b)return;
+  b.className='auth-banner show '+kind;
+  i.textContent=kind==='err'?'⚠️':kind==='ok'?'✅':'ℹ️';
+  body.innerHTML=msg+(extra?'<br>'+extra:'');
+  b.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function hideAuthBanner(){const b=document.getElementById('auth-banner');if(b)b.classList.remove('show')}
+function setBtnLoading(id,on){const b=document.getElementById(id);if(!b)return;if(on){b.classList.add('loading');b.dataset.t=b.textContent;b.textContent=''}else{b.classList.remove('loading');if(b.dataset.t)b.textContent=b.dataset.t}}
+function emailValid(e){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)}
+function translateAuthError(msg){
+  msg=(msg||'').toLowerCase();
+  if(msg.includes('invalid login')||msg.includes('invalid email or password'))return 'Email o password errati. Riprova.';
+  if(msg.includes('email not confirmed'))return 'Devi confermare la tua email. Controlla la posta (anche spam).';
+  if(msg.includes('user already registered')||msg.includes('already exists'))return 'Esiste già un account con questa email. Vai su Accedi.';
+  if(msg.includes('password should be'))return 'Password troppo corta (minimo 6 caratteri).';
+  if(msg.includes('rate limit')||msg.includes('too many'))return 'Troppi tentativi. Riprova fra qualche minuto.';
+  if(msg.includes('signup is disabled'))return 'Registrazioni temporaneamente disabilitate.';
+  if(msg.includes('unable to validate email'))return 'Email non valida secondo il server.';
+  if(msg.includes('network')||msg.includes('failed to fetch'))return 'Connessione al server non riuscita. Riprova.';
+  return 'Errore: '+msg;
+}
 async function doLogin(){
-  const e=document.getElementById('li-email').value.trim();
+  hideAuthBanner();
+  const e=document.getElementById('li-email').value.trim().toLowerCase();
   const p=document.getElementById('li-pw').value;
-  if(!e||!p){showToast('Inserisci email e password');return}
-  if(!/^[^@]+@[^@]+\\.[^@]+$/.test(e)){showToast('Email non valida');return}
-  if(!supa){showToast('Database non disponibile, usa modalità demo');const user={email:e,name:e.split('@')[0],authMethod:'email',joinedAt:Date.now()};finishAuth(user,'Bentornato (demo)');return}
-  showToast('Accesso in corso...');
-  const {data,error}=await supa.auth.signInWithPassword({email:e,password:p});
-  if(error){showToast('Errore: '+error.message);return}
-  const user={email:data.user.email,name:(data.user.user_metadata&&data.user.user_metadata.name)||e.split('@')[0],authMethod:'email',joinedAt:Date.now(),id:data.user.id};
-  finishAuth(user,'Bentornato, '+user.name+'!');
+  if(!e||!p){showAuthBanner('err','Inserisci email e password.');return}
+  if(!emailValid(e)){showAuthBanner('err','Email non valida. Formato atteso: nome@dominio.it');return}
+  if(!supa){
+    showAuthBanner('info','Database non disponibile. Continuo in modalità demo.');
+    const user={email:e,name:e.split('@')[0],authMethod:'demo',joinedAt:Date.now()};
+    finishAuth(user,'Bentornato (demo)');return;
+  }
+  setBtnLoading('btn-login',true);
+  try{
+    const {data,error}=await supa.auth.signInWithPassword({email:e,password:p});
+    if(error){showAuthBanner('err',translateAuthError(error.message));setBtnLoading('btn-login',false);return}
+    const user={email:data.user.email,name:(data.user.user_metadata&&data.user.user_metadata.name)||e.split('@')[0],authMethod:'email',joinedAt:Date.now(),id:data.user.id};
+    finishAuth(user,'Bentornato, '+user.name+'!');
+  }catch(ex){
+    showAuthBanner('err',translateAuthError(ex.message||String(ex)));
+    setBtnLoading('btn-login',false);
+  }
 }
 async function doSignup(){
+  hideAuthBanner();
   const n=document.getElementById('su-name').value.trim();
-  const e=document.getElementById('su-email').value.trim();
+  const e=document.getElementById('su-email').value.trim().toLowerCase();
   const p=document.getElementById('su-pw').value;
   const dob=document.getElementById('su-dob').value;
   const tos=document.getElementById('su-tos').checked;
-  if(!n){showToast('Inserisci il tuo nome');return}
-  if(!/^[^@]+@[^@]+\\.[^@]+$/.test(e)){showToast('Email non valida');return}
-  if(pwScore(p)<2){showToast('Password troppo debole');return}
-  if(!dob){showToast('Inserisci la data di nascita');return}
+  if(!n){showAuthBanner('err','Inserisci il tuo nome.');return}
+  if(n.length<2){showAuthBanner('err','Nome troppo corto.');return}
+  if(!emailValid(e)){showAuthBanner('err','Email non valida.');return}
+  if(!p||p.length<8){showAuthBanner('err','Password di almeno 8 caratteri.');return}
+  if(pwScore(p)<2){showAuthBanner('err','Password troppo debole. Usa maiuscole, numeri o simboli.');return}
+  if(!dob){showAuthBanner('err','Inserisci la data di nascita.');return}
   const age=Math.floor((Date.now()-new Date(dob).getTime())/(365.25*86400000));
-  if(age<16){showToast('Devi avere almeno 16 anni');return}
-  if(!tos){showToast('Devi accettare termini e privacy');return}
-  if(!supa){showToast('Database non disponibile, usa modalità demo');const user={email:e,name:n,authMethod:'email',joinedAt:Date.now(),dob};finishAuth(user,'Account demo creato');return}
-  showToast('Creazione account...');
-  const {data,error}=await supa.auth.signUp({email:e,password:p,options:{data:{name:n,dob:dob}}});
-  if(error){showToast('Errore: '+error.message);return}
-  if(data.user&&!data.session){
-    alert('✉️ Email di verifica inviata a '+e+'\n\nApri la tua casella di posta (anche spam), clicca il link di conferma, poi torna qui e accedi.');
-    document.querySelector('[data-tab="login"]').click();
-    document.getElementById('li-email').value=e;
-    return;
+  if(age<16){showAuthBanner('err','Devi avere almeno 16 anni per usare 24.');return}
+  if(!tos){showAuthBanner('err','Devi accettare termini e privacy per continuare.');return}
+  if(!supa){
+    const user={email:e,name:n,authMethod:'demo',joinedAt:Date.now(),dob};
+    finishAuth(user,'Account demo creato');return;
   }
-  const user={email:e,name:n,authMethod:'email',joinedAt:Date.now(),dob,id:data.user&&data.user.id};
-  finishAuth(user,'Benvenuto, '+n+'!');
+  setBtnLoading('btn-signup',true);
+  try{
+    const {data,error}=await supa.auth.signUp({
+      email:e,password:p,
+      options:{data:{name:n,dob:dob},emailRedirectTo:window.location.origin+window.location.pathname}
+    });
+    if(error){showAuthBanner('err',translateAuthError(error.message));setBtnLoading('btn-signup',false);return}
+    setBtnLoading('btn-signup',false);
+    if(data.user&&!data.session){
+      // Email confirmation required
+      showAuthBanner('ok','<b>Account creato! Conferma la tua email.</b>Abbiamo inviato un link a <strong>'+e+'</strong>. Apri la mail (anche cartella spam), clicca il link, poi torna qui per accedere. <button onclick="doResendConfirm(\''+e.replace(/'/g,"\\'")+'\')">Rinvia email</button>');
+      // Switch to login tab and prefill
+      document.querySelector('[data-tab="login"]').click();
+      document.getElementById('li-email').value=e;
+      return;
+    }
+    // Auto-confirm enabled in Supabase
+    const user={email:e,name:n,authMethod:'email',joinedAt:Date.now(),dob,id:data.user&&data.user.id};
+    finishAuth(user,'Benvenuto, '+n+'!');
+  }catch(ex){
+    showAuthBanner('err',translateAuthError(ex.message||String(ex)));
+    setBtnLoading('btn-signup',false);
+  }
+}
+async function doResendConfirm(email){
+  if(!supa)return;
+  try{
+    const {error}=await supa.auth.resend({type:'signup',email:email,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
+    if(error){showAuthBanner('err','Rinvio non riuscito: '+error.message)}
+    else{showAuthBanner('ok','Email rinviata a '+email+'. Controlla la posta (anche spam).')}
+  }catch(ex){showAuthBanner('err','Errore: '+(ex.message||ex))}
+}
+async function doForgotPassword(){
+  hideAuthBanner();
+  const e=document.getElementById('li-email').value.trim().toLowerCase();
+  if(!emailValid(e)){showAuthBanner('err','Inserisci la tua email qui sopra, poi clicca di nuovo "Password dimenticata".');return}
+  if(!supa){showAuthBanner('info','Modalità demo: nessun reset password.');return}
+  try{
+    const {error}=await supa.auth.resetPasswordForEmail(e,{redirectTo:window.location.origin+window.location.pathname});
+    if(error){showAuthBanner('err','Errore: '+error.message)}
+    else{showAuthBanner('ok','Email di reset inviata a '+e+'. Apri il link, scegli una nuova password, poi torna qui.')}
+  }catch(ex){showAuthBanner('err','Errore: '+(ex.message||ex))}
+}
+function doDemoMode(){
+  const user={email:'demo@24.app',name:'Ospite',authMethod:'demo',joinedAt:Date.now()};
+  finishAuth(user,'Modalità demo attiva');
 }
 async function doSSO(provider){
-  if(!supa){showToast(provider+' OAuth richiede database. Modalità demo:');const user={email:'demo@'+provider.toLowerCase()+'.com',name:'Demo '+provider,authMethod:provider.toLowerCase(),joinedAt:Date.now()};finishAuth(user,'Demo '+provider);return}
-  const map={'Apple':'apple','Google':'google'};
-  const {error}=await supa.auth.signInWithOAuth({provider:map[provider]||provider.toLowerCase(),options:{redirectTo:window.location.origin}});
-  if(error){showToast('OAuth: '+error.message+' — provider non ancora configurato in Supabase')}
+  // Disabled - shown as "coming soon" in UI
+  showAuthBanner('info',provider+' Sign In sarà disponibile presto. Per ora usa email e password.');
 }
 function finishAuth(user,msg){
   state.user=user;
