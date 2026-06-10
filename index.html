@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#000">
+<title>24 — Prototipo</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',system-ui,sans-serif;background:#1a1a2e;color:#000;overflow:hidden;user-select:none;-webkit-font-smoothing:antialiased}
+.stage{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.brand-side{display:none;flex-direction:column;gap:16px;margin-right:40px;max-width:300px;color:#fff}
+.brand-side .logo{display:flex;align-items:center;gap:12px;font-size:28px;font-weight:700;letter-spacing:-0.02em}
+.brand-side .lico{width:40px;height:40px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.brand-side .lico svg,#scr-onb .big svg{width:100%;height:100%;display:block}
+.brand-side h2{font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-0.01em}
+.brand-side .card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 15px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.5}
+.brand-side .card strong{color:#fff;font-weight:600}
+.brand-side .card.cta{background:linear-gradient(135deg,rgba(0,122,255,0.18),rgba(88,86,214,0.18));border-color:rgba(0,122,255,0.3)}
+.brand-side code{background:rgba(0,0,0,0.3);padding:2px 5px;border-radius:4px;font-size:11px;font-family:ui-monospace,monospace}
+.brand-side .auth{font-size:11px;color:rgba(255,255,255,0.4)}
+.phone{width:390px;height:844px;background:#000;border-radius:54px;padding:11px;box-shadow:0 22px 50px rgba(0,0,0,0.45);position:relative;flex-shrink:0}
+.screen-wrap{width:100%;height:100%;background:#F2F2F7;border-radius:44px;overflow:hidden;position:relative;contain:layout style paint}
+.island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:114px;height:33px;background:#000;border-radius:20px;z-index:1000;pointer-events:none}
+.sb{position:absolute;top:0;left:0;right:0;height:48px;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 0;font-size:15px;font-weight:600;color:#000;z-index:999;pointer-events:none}
+.sb.dark{color:#fff}
+.sb .r{display:flex;align-items:center;gap:5px}
+.hi{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:128px;height:5px;background:#000;border-radius:3px;z-index:999;pointer-events:none}
+.screen{position:absolute;inset:0;background:#F2F2F7;display:none;flex-direction:column;z-index:1;contain:layout style}
+.screen.active{display:flex}
+#scr-onb{z-index:999;background:#000;color:#fff;align-items:center;justify-content:center;padding:50px 30px 70px;text-align:center}
+#scr-onb .big{width:104px;height:104px;border-radius:24px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:8px;box-shadow:0 16px 38px rgba(255,59,48,0.26),0 6px 16px rgba(0,0,0,0.5)}
+#scr-onb h1{font-size:40px;font-weight:700;letter-spacing:-0.03em;margin-bottom:8px}
+#scr-onb .tag{font-size:24px;color:rgba(255,255,255,0.95);margin:24px 0 60px;line-height:1.3;max-width:300px;font-weight:500;letter-spacing:-0.005em}
+#scr-onb .feats{display:flex;flex-direction:column;gap:18px;width:100%;max-width:300px;margin-bottom:34px}
+#scr-onb .feat{display:flex;align-items:flex-start;gap:13px;text-align:left}
+#scr-onb .fi{width:34px;height:34px;border-radius:10px;background:rgba(0,122,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+#scr-onb .ft h3{font-size:14px;font-weight:600;margin-bottom:2px}
+#scr-onb .ft p{font-size:12px;color:rgba(255,255,255,0.6);line-height:1.4}
+.cta{width:100%;max-width:300px;padding:14px;border-radius:14px;background:#fff;color:#000;font-size:16px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.cta:active{opacity:0.85}
+.cta.blue{background:#007AFF;color:#fff}
+.cta.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.2)}
+#scr-map{background:#1a1a2e}
+.mh{position:absolute;top:50px;left:12px;right:12px;z-index:500;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.msearch{background:rgba(255,255,255,0.92);border-radius:13px;padding:9px 11px;display:flex;align-items:center;gap:9px;box-shadow:0 3px 8px rgba(0,0,0,0.15);pointer-events:auto}
+.msearch svg{width:17px;height:17px;fill:#8E8E93;flex-shrink:0}
+.msearch input{flex:1;border:none;background:transparent;font-size:14px;font-family:inherit;outline:none;color:#000;min-width:0}
+.cpill{background:#007AFF;color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:100px;display:flex;align-items:center;gap:4px;cursor:pointer;flex-shrink:0}
+.mstatus{background:rgba(0,0,0,0.78);color:#fff;font-size:11px;font-weight:500;padding:6px 10px;border-radius:11px;align-self:flex-start;display:flex;align-items:center;gap:7px;pointer-events:auto}
+.mstatus .dot{width:7px;height:7px;border-radius:50%;background:#34C759;box-shadow:0 0 0 3px rgba(52,199,89,0.25)}
+.mstatus.away .dot{background:#FF9500;box-shadow:0 0 0 3px rgba(255,149,0,0.25)}
+.opill{background:linear-gradient(135deg,#FFD60A,#FF9500);color:#000;font-size:11px;font-weight:700;padding:6px 10px;border-radius:11px;display:none;align-items:center;gap:5px;pointer-events:auto;align-self:flex-start;box-shadow:0 2px 6px rgba(255,149,0,0.3)}
+.opill.show{display:flex}
+.opill.show ~ .mstatus{display:none}
+#map{position:absolute;inset:0;z-index:1}
+.cpicker{position:absolute;top:96px;right:12px;background:#fff;border-radius:13px;padding:5px;box-shadow:0 6px 18px rgba(0,0,0,0.2);z-index:600;display:none;flex-direction:column;gap:1px;min-width:180px}
+.cpicker.open{display:flex}
+.copt{padding:9px 11px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.copt:hover{background:rgba(0,0,0,0.04)}
+.copt .ic{font-size:17px;margin-right:5px}
+.copt .cn{font-size:10px;color:#8E8E93;font-weight:600}
+.copt.active{background:rgba(0,122,255,0.1);color:#007AFF}
+.cmark{width:48px;height:48px;display:flex;align-items:center;justify-content:center;position:relative}
+.cmark.hot::before{content:'';position:absolute;width:46px;height:46px;border-radius:50%;background:currentColor;opacity:0.3;animation:mp 2.6s infinite}
+@keyframes mp{0%{transform:scale(0.7);opacity:0.4}100%{transform:scale(1.5);opacity:0}}
+.cmark .pin{position:relative;width:36px;height:36px;border-radius:50%;background:currentColor;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;box-shadow:0 3px 7px rgba(0,0,0,0.3);cursor:pointer;border:2px solid rgba(255,255,255,0.3)}
+.cmark .pin .ct{position:absolute;bottom:-5px;font-size:10px;font-weight:700;background:#000;color:#fff;padding:1px 5px;border-radius:7px;min-width:20px;text-align:center;border:1.5px solid #fff}
+.cmark:active .pin{transform:scale(0.92)}
+.umark{width:20px;height:20px;position:relative}
+.umark .dot{position:absolute;inset:0;background:#007AFF;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 5px rgba(0,122,255,0.4)}
+.umark .halo{position:absolute;inset:-11px;border-radius:50%;background:rgba(0,122,255,0.2);animation:halo 2.8s infinite}
+@keyframes halo{0%{transform:scale(0.5);opacity:0.6}100%{transform:scale(1.4);opacity:0}}
+.sheet{position:absolute;left:0;right:0;bottom:84px;background:rgba(255,255,255,0.96);border-radius:22px 22px 0 0;z-index:400;transform:translateY(calc(100% - 106px));transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -2px 10px rgba(0,0,0,0.12);max-height:70%;overflow:hidden;display:flex;flex-direction:column}
+.sheet.exp{transform:translateY(0)}
+.sheet .hndl{width:36px;height:5px;background:rgba(0,0,0,0.2);border-radius:3px;margin:8px auto;flex-shrink:0;cursor:pointer}
+.sheet .sh{padding:3px 16px 11px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sheet h3{font-size:19px;font-weight:700;letter-spacing:-0.02em}
+.sheet .scn{font-size:11px;color:#8E8E93;font-weight:500}
+.nlist{flex:1;overflow-y:auto;padding:0 11px 16px;-webkit-overflow-scrolling:touch}
+.cat-h{font-size:10px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:0.08em;padding:14px 6px 6px;margin-top:4px}
+.cat-h:first-child{margin-top:0;padding-top:4px}
+.nc{display:flex;align-items:center;gap:11px;padding:9px;background:rgba(0,0,0,0.03);border-radius:13px;margin-bottom:5px;cursor:pointer}
+.nc:active{background:rgba(0,0,0,0.06)}
+.nc .ni{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0;position:relative}
+.nc .nl{position:absolute;bottom:-3px;right:-3px;width:16px;height:16px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.nc .nb{flex:1;min-width:0}
+.nc .nt{font-size:14px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc .nm{font-size:11px;color:#8E8E93;display:flex;align-items:center;gap:5px}
+.nc .lv{background:linear-gradient(135deg,#FF3B30,#FF9500);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:5px}
+.nc .ar{color:#C7C7CC;flex-shrink:0}
+.modal{position:absolute;inset:0;z-index:800;display:none;flex-direction:column;background:#F2F2F7}
+.modal.open{display:flex;animation:su 0.3s cubic-bezier(0.32,0.72,0,1)}
+@keyframes su{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.mhdr{position:relative;height:190px;display:flex;flex-direction:column;justify-content:flex-end;padding:55px 18px 14px;color:#fff;overflow:hidden}
+.mclose{position:absolute;top:50px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:15px;cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;font-weight:600}
+.mhdr .pt{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;opacity:0.9;margin-bottom:3px;position:relative;z-index:2}
+.mhdr h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;line-height:1.1;margin-bottom:7px;position:relative;z-index:2;text-shadow:0 2px 5px rgba(0,0,0,0.25)}
+.mhdr .meta{display:flex;gap:10px;font-size:12px;opacity:0.92;position:relative;z-index:2}
+.lock{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.55),rgba(0,0,0,0.88));z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px 28px;color:#fff}
+.lock .li{width:60px;height:60px;border-radius:18px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.18)}
+.lock h3{font-size:20px;font-weight:700;margin-bottom:5px;letter-spacing:-0.02em}
+.lock p{font-size:13px;color:rgba(255,255,255,0.72);line-height:1.5;margin-bottom:18px;max-width:250px}
+.lock .dpill{background:rgba(255,255,255,0.14);border-radius:100px;padding:6px 12px;font-size:11px;margin-bottom:18px}
+.lock .acts{display:flex;flex-direction:column;gap:8px;width:100%;max-width:270px}
+.lock .pstrip{display:flex;gap:5px;margin-bottom:18px}
+.lock .pstrip > div{width:42px;height:42px;border-radius:9px;filter:blur(5px);opacity:0.6}
+.mbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;border-radius:20px 20px 0 0;margin-top:-20px;position:relative;z-index:6;padding-bottom:96px;contain:layout style}
+.tabs{position:sticky;top:0;background:rgba(255,255,255,0.96);z-index:10;padding:13px 14px 9px;display:flex;gap:7px;border-bottom:1px solid rgba(0,0,0,0.05)}
+.tabp{padding:5px 11px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(0,0,0,0.05);color:#000;cursor:pointer}
+.tabp.active{background:#000;color:#fff}
+.srow{display:flex;gap:10px;padding:13px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.srow::-webkit-scrollbar{display:none}
+.sb-i{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.sb-i .rng{width:54px;height:54px;border-radius:50%;padding:2.5px;background:linear-gradient(135deg,#FF3B30,#FF9500,#FFD60A)}
+.sb-i .inr{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--c1,#5856D6),var(--c2,#007AFF));display:flex;align-items:center;justify-content:center;border:2px solid #fff;color:#fff;font-size:18px;font-weight:600}
+.sb-i .nm{font-size:10px;color:#000;font-weight:500;max-width:54px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-i.add .rng{background:transparent;padding:0}
+.sb-i.add .inr{background:rgba(0,0,0,0.05);color:#007AFF;font-size:24px;font-weight:300;border:2px dashed rgba(0,0,0,0.2)}
+.post{padding:11px 13px 12px;border-bottom:1px solid rgba(0,0,0,0.05)}
+.phead{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.pav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--c1,#5856D6),var(--c2,#007AFF));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;flex-shrink:0}
+.pu{flex:1;min-width:0}
+.pun{font-size:13px;font-weight:600}
+.pts{font-size:11px;color:#8E8E93}
+.pmore{color:#8E8E93;font-size:17px;cursor:pointer;padding:3px 7px}
+.pimg{width:100%;height:260px;border-radius:13px;background:linear-gradient(135deg,var(--c1,#FF3B30),var(--c2,#FF9500));display:flex;align-items:center;justify-content:center;font-size:58px;color:rgba(255,255,255,0.9);position:relative;overflow:hidden}
+.pimg .pemoji{position:relative;z-index:2}
+.pbadge{position:absolute;top:9px;right:9px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;z-index:3}
+.ptxt{background:rgba(0,0,0,0.04);padding:11px 13px;border-radius:13px;font-size:13px;line-height:1.4;color:#000}
+.pacts{display:flex;gap:3px;margin-top:7px;align-items:center}
+.pa{display:flex;align-items:center;gap:3px;padding:4px 8px 4px 4px;border-radius:100px;cursor:pointer;font-size:12px;font-weight:500}
+.pa.active{color:#FF3B30}
+.pa svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
+.pa.active svg{fill:#FF3B30;stroke:#FF3B30}
+.fab{position:absolute;bottom:96px;right:13px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#5856D6);color:#fff;border:none;font-size:23px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:50;box-shadow:0 5px 14px rgba(0,122,255,0.4)}
+.fab:active{transform:scale(0.92)}
+.fab.hidden{display:none}
+#scr-exp{background:#000;color:#fff}
+.eh{padding:64px 15px 10px}
+.eh h1{font-size:28px;font-weight:700;letter-spacing:-0.02em}
+.eh p{font-size:12px;color:rgba(255,255,255,0.6)}
+.elist{flex:1;overflow-y:auto;padding:0 13px 100px;-webkit-overflow-scrolling:touch}
+.ec{background:linear-gradient(135deg,var(--c1,#5856D6),var(--c2,#007AFF));border-radius:17px;padding:16px;margin-bottom:9px;position:relative;cursor:pointer;min-height:114px;display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+.ec:active{opacity:0.92}
+.ec .er{display:flex;justify-content:space-between;align-items:center;gap:7px}
+.ec .et{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(0,0,0,0.3);padding:3px 7px;border-radius:5px}
+.ec .ecit{background:rgba(0,0,0,0.3);padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600}
+.ec .eti{font-size:18px;font-weight:700;letter-spacing:-0.02em}
+.ec .em{display:flex;justify-content:space-between;font-size:11px;opacity:0.9}
+.ah{padding:64px 15px 7px}
+.ah h1{font-size:28px;font-weight:700;letter-spacing:-0.02em}
+.alist{flex:1;overflow-y:auto;padding:7px 13px 100px;-webkit-overflow-scrolling:touch}
+.ai{display:flex;gap:11px;padding:11px;background:#fff;border-radius:13px;margin-bottom:5px;align-items:center}
+.ai .aic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;color:#fff}
+.ai .aib{flex:1;min-width:0}
+.ai .aib p{font-size:12px;line-height:1.4}
+.ai .aib p strong{font-weight:600}
+.ai .aib .ts{font-size:11px;color:#8E8E93;margin-top:2px}
+#scr-prof{background:#F2F2F7;overflow-y:auto}
+.ph{padding:64px 16px 16px;text-align:center}
+.pav-big{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#5856D6,#007AFF);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:700;margin:0 auto 10px;box-shadow:0 4px 14px rgba(88,86,214,0.3)}
+.pn{font-size:19px;font-weight:700;letter-spacing:-0.02em;margin-bottom:3px}
+.phn{font-size:12px;color:#8E8E93;margin-bottom:8px}
+.pbio{font-size:12px;color:#000;max-width:270px;margin:0 auto 15px;line-height:1.4}
+.crown{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#FFD60A,#FF9500);color:#000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:0.05em;margin-top:4px;box-shadow:0 2px 5px rgba(255,149,0,0.3)}
+.crown.hidden{display:none}
+.pstats{display:flex;justify-content:space-around;padding:13px;background:#fff;border-radius:17px;margin:0 13px 13px}
+.pst{text-align:center;flex:1}
+.pst .pnum{font-size:20px;font-weight:700;letter-spacing:-0.02em}
+.pst .plbl{font-size:9px;color:#8E8E93;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;margin-top:2px}
+.psec{margin:0 13px 13px;background:#fff;border-radius:17px;overflow:hidden}
+.psec h3{padding:11px 15px 5px;font-size:11px;font-weight:600;color:#8E8E93;text-transform:uppercase;letter-spacing:0.05em}
+.pvis{display:flex;flex-wrap:wrap;gap:5px;padding:0 13px 13px}
+.vp{background:rgba(0,122,255,0.1);color:#007AFF;padding:4px 10px;border-radius:9px;font-size:11px;font-weight:600}
+.pli{display:flex;align-items:center;gap:11px;padding:12px 13px;border-top:1px solid rgba(0,0,0,0.05);cursor:pointer}
+.pli:active{background:rgba(0,0,0,0.03)}
+.pli .pic{width:28px;height:28px;border-radius:8px;background:var(--c,#007AFF);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600}
+.pli .ptx{flex:1;font-size:14px;font-weight:500}
+.pli .par{color:#C7C7CC}
+.pli.tr{cursor:default}.pli.tr:active{background:transparent}
+.sw{position:relative;width:46px;height:28px;background:rgba(120,120,128,0.32);border-radius:100px;cursor:pointer;transition:background 0.22s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.15);transition:transform 0.22s cubic-bezier(0.32,0.72,0,1)}
+.sw.on{background:#34C759}
+.sw.on::after{transform:translateX(18px)}
+.tb{position:absolute;bottom:0;left:0;right:0;height:80px;background:rgba(255,255,255,0.92);border-top:0.5px solid rgba(0,0,0,0.1);display:flex;align-items:flex-start;padding-top:7px;z-index:600}
+.tb.dark{background:rgba(28,28,30,0.92);border-top-color:rgba(255,255,255,0.1)}
+.ti{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;color:#8E8E93;cursor:pointer}
+.ti.active{color:#007AFF}
+.ti svg{width:24px;height:24px}
+.ti .l{font-size:9px;font-weight:500}
+.comp{position:absolute;inset:0;z-index:900;background:#000;color:#fff;display:none;flex-direction:column;animation:su 0.3s cubic-bezier(0.32,0.72,0,1)}
+.comp.open{display:flex}
+.ch{padding:50px 18px 8px;display:flex;align-items:center;justify-content:space-between}
+.ch .l{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.7)}
+.gd{width:7px;height:7px;border-radius:50%;background:#34C759;box-shadow:0 0 0 3px rgba(52,199,89,0.25)}
+.cclose{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cb{flex:1;padding:20px 18px;display:flex;flex-direction:column;gap:13px}
+.cp{text-align:center;margin-bottom:3px}
+.cp .ctl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:3px}
+.cp .cnm{font-size:21px;font-weight:700;letter-spacing:-0.02em}
+.ctr{display:flex;gap:8px}
+.ct{flex:1;padding:9px;border-radius:11px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;cursor:pointer}
+.ct.active{background:rgba(0,122,255,0.22);border-color:#007AFF}
+.ct .i{font-size:19px;margin-bottom:2px}
+.ct .l{font-size:10px;font-weight:600}
+.cta-area{background:rgba(255,255,255,0.08);border:2px dashed rgba(255,255,255,0.2);border-radius:13px;padding:28px 14px;text-align:center}
+.cta-area .i{font-size:36px;margin-bottom:3px}
+.cta-area .l{font-size:12px;color:rgba(255,255,255,0.6)}
+.ctxt{width:100%;min-height:90px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:13px;padding:12px;color:#fff;font-family:inherit;font-size:14px;resize:none;outline:none}
+.ctxt::placeholder{color:rgba(255,255,255,0.4)}
+.cf{padding:10px 18px 28px}
+.csub{width:100%;padding:13px;border-radius:13px;background:#007AFF;color:#fff;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.toast{position:absolute;top:58px;left:50%;transform:translateX(-50%) translateY(-70px);background:rgba(28,28,30,0.94);color:#fff;font-size:12px;font-weight:500;padding:8px 14px;border-radius:100px;z-index:1500;opacity:0;transition:all 0.26s cubic-bezier(0.32,0.72,0,1);max-width:300px}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.dtool{position:absolute;bottom:96px;left:13px;background:rgba(0,0,0,0.85);border-radius:13px;padding:9px;z-index:50;display:flex;flex-direction:column;gap:4px;max-width:172px}
+.dtool .dl{font-size:9px;color:rgba(255,255,255,0.55);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px}
+.dtool .db{background:rgba(255,255,255,0.12);color:#fff;border:none;padding:6px 9px;border-radius:8px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left}
+.dtool .db.active{background:#007AFF}
+.dtool.hidden{display:none}
+
+/* AUTH SCREEN */
+#scr-auth{z-index:998;background:#000;color:#fff;padding:54px 28px 30px;overflow-y:auto}
+#scr-auth .auth-back{position:absolute;top:50px;left:18px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+#scr-auth .auth-head{text-align:center;margin-bottom:24px}
+#scr-auth .auth-logo{width:60px;height:60px;border-radius:14px;overflow:hidden;margin:0 auto 12px;box-shadow:0 8px 22px rgba(255,59,48,0.22)}
+#scr-auth .auth-logo svg{width:100%;height:100%;display:block}
+#scr-auth h2{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px}
+#scr-auth .auth-sub{font-size:13px;color:rgba(255,255,255,0.6);max-width:280px;margin:0 auto;line-height:1.4}
+.auth-tabs{display:flex;background:rgba(255,255,255,0.06);border-radius:11px;padding:3px;margin-bottom:18px}
+.auth-tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);cursor:pointer;border-radius:9px;transition:all 0.2s}
+.auth-tab.active{background:rgba(255,255,255,0.12);color:#fff}
+.auth-form{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.auth-form.hidden{display:none}
+.auth-input{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 14px;color:#fff;font-family:inherit;font-size:14px;outline:none;transition:border-color 0.15s}
+.auth-input:focus{border-color:#007AFF;background:rgba(255,255,255,0.1)}
+.auth-input::placeholder{color:rgba(255,255,255,0.42)}
+.pw-wrap{position:relative}
+.pw-wrap .auth-input{padding-right:42px}
+.pw-eye{position:absolute;top:50%;right:8px;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.pw-eye:hover{color:#fff;background:rgba(255,255,255,0.08)}
+.pw-strength{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-top:-4px}
+.pw-strength-bar{height:100%;width:0;transition:width 0.25s,background 0.25s}
+.pw-hint{font-size:11px;color:rgba(255,255,255,0.5);margin-top:-2px}
+.auth-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:rgba(255,255,255,0.7);line-height:1.4;cursor:pointer;padding:4px 2px}
+.auth-check input{margin-top:2px;accent-color:#007AFF;flex-shrink:0}
+.auth-check a{color:#007AFF;text-decoration:none}
+.auth-form button.cta{margin-top:6px}
+.auth-link{display:block;text-align:center;font-size:13px;color:#007AFF;margin-top:8px;cursor:pointer;text-decoration:none}
+.auth-or{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.4);font-size:11px;font-weight:600;letter-spacing:0.08em;margin:14px 0 12px;text-transform:uppercase}
+.auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.1)}
+.sso-btn{width:100%;padding:12px;border-radius:12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;margin-bottom:8px}
+.sso-btn:active{opacity:0.85}
+.sso-btn.apple{background:#fff;color:#000;border-color:#fff}
+.sso-btn.google{background:rgba(255,255,255,0.95);color:#000}
+.auth-trust{margin-top:18px;padding:14px;background:rgba(0,122,255,0.08);border:1px solid rgba(0,122,255,0.18);border-radius:12px;display:flex;flex-direction:column;gap:7px}
+.auth-trust .ti{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.4}
+.auth-trust .ti .ic{flex-shrink:0;width:18px;font-size:13px}
+/* Logged-in indicator */
+.account-card{background:linear-gradient(135deg,rgba(0,122,255,0.12),rgba(88,86,214,0.12));border:1px solid rgba(0,122,255,0.2);border-radius:14px;padding:12px 14px;margin:0 13px 13px;display:flex;align-items:center;gap:12px}
+.account-card .ac-i{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#34C759,#30B0C7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.account-card .ac-b{flex:1;min-width:0}
+.account-card .ac-em{font-size:13px;font-weight:600;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-card .ac-st{font-size:11px;color:#34C759;font-weight:600;margin-top:2px;display:flex;align-items:center;gap:4px}
+.account-card .ac-st::before{content:'';width:6px;height:6px;border-radius:50%;background:#34C759}
+.pli .sub{font-size:10px;color:#8E8E93;margin-top:2px}
+.pli.danger .ptx{color:#FF3B30}
+.vtoggle{position:absolute;top:100px;right:13px;width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,0.95);border:none;font-size:19px;cursor:pointer;z-index:50;box-shadow:0 3px 10px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center}
+.vtoggle:active{transform:scale(0.95)}
+.vtoggle.sat{background:rgba(0,0,0,0.8);color:#fff}
+.vtoggle.hidden{display:none}
+.ibtn{position:absolute;top:12px;right:13px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;border:none;font-size:13px;font-weight:700;z-index:1100;cursor:pointer;display:flex;align-items:center;justify-content:center;font-style:italic}
+.tov{position:absolute;inset:0;background:rgba(0,0,0,0.78);z-index:2000;display:none;align-items:flex-end;justify-content:center;padding:22px}
+.tov.open{display:flex}
+.tc{background:#fff;border-radius:18px;padding:20px;max-width:300px;width:100%;margin-bottom:90px;box-shadow:0 8px 22px rgba(0,0,0,0.4)}
+.tc .stp{font-size:10px;font-weight:700;color:#007AFF;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:7px}
+.tc h3{font-size:17px;font-weight:700;letter-spacing:-0.02em;margin-bottom:7px}
+.tc p{font-size:13px;line-height:1.5;color:#3C3C43;margin-bottom:12px}
+.tc .dts{display:flex;gap:4px;justify-content:center;margin-bottom:12px}
+.td{width:5px;height:5px;border-radius:50%;background:rgba(0,0,0,0.15);transition:all 0.2s}
+.td.active{background:#007AFF;width:14px;border-radius:3px}
+.tc .acts{display:flex;gap:7px}
+.tc .acts button{flex:1;padding:10px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.tc .next{background:#007AFF;color:#fff}
+.tc .skip{background:rgba(0,0,0,0.06);color:#000}
+@media (min-width:1100px){.brand-side{display:flex}}
+@media (max-width:500px){
+body{background:#000}.stage{padding:0}.phone{width:100vw;height:100vh;border-radius:0;padding:0;box-shadow:none}.screen-wrap{border-radius:0}.island,.hi,.sb{display:none}.mh{top:env(safe-area-inset-top,18px)}#scr-onb{padding:55px 30px 50px}.eh,.ah,.ph{padding-top:24px}.ch{padding-top:20px}.mclose{top:20px}.ibtn{top:env(safe-area-inset-top,14px);right:13px}
+}
+.leaflet-control-attribution{font-size:8px!important;opacity:0.5}
+.leaflet-bar{box-shadow:0 2px 6px rgba(0,0,0,0.18)!important;border:none!important}
+button:focus,input:focus{outline:none}
+</style>
+</head>
+<body>
+<div class="stage">
+<aside class="brand-side">
+<div class="logo"><div class="lico"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" rx="230" fill="#000"/><text x="510" y="612" font-family="-apple-system,Inter,system-ui,sans-serif" font-weight="900" font-size="540" fill="#fff" text-anchor="middle" letter-spacing="-22">24</text><circle cx="772" cy="594" r="42" fill="#FF3B30"/></svg></div><span>24</span></div>
+<h2>Il social dei luoghi reali. Sblocca solo se ci sei — hai 24 ore.</h2>
+<div class="card"><strong>Prototipo v0.3</strong><p style="margin-top:5px">Esplora la mappa di <strong>Bologna · Modena · Sassuolo</strong>, sblocca le caselle, pubblica contenuti.</p></div>
+<div class="card cta"><strong>📤 Condividi</strong><p style="margin-top:5px">Condividi il link via WhatsApp o email. Si apre direttamente nel browser di chi lo riceve. Niente installazione.</p></div>
+<div class="card"><strong>👑 Modalità Organizzatore</strong><p style="margin-top:5px">Dal Profilo attivi l'accesso illimitato a tutte le caselle, ovunque tu sia.</p></div>
+<div class="auth">© 2026 Gabriele Barigazzi</div>
+</aside>
+
+<div class="phone"><div class="screen-wrap" id="phone-screen">
+<div class="island"></div>
+<div class="sb" id="status-bar"><div>9:41</div><div class="r">
+<svg width="17" height="11" viewBox="0 0 17 11"><rect y="6" width="3" height="5" rx="1" fill="currentColor"/><rect x="4" y="4" width="3" height="7" rx="1" fill="currentColor"/><rect x="8" y="2" width="3" height="9" rx="1" fill="currentColor"/><rect x="12" y="0" width="3" height="11" rx="1" fill="currentColor"/></svg>
+<svg width="17" height="13" viewBox="0 0 17 13"><path d="M8.5 12.5L16 4.5c-2-1.8-4.6-2.8-7.5-2.8s-5.5 1-7.5 2.8l7.5 8z" fill="currentColor"/></svg>
+<svg width="25" height="11" viewBox="0 0 25 11"><rect x="0.5" y="0.5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor"/><rect x="2" y="2" width="17" height="7" rx="1" fill="currentColor"/><rect x="22" y="3.5" width="2" height="4" rx="1" fill="currentColor"/></svg>
+</div></div>
+
+<button class="ibtn" onclick="startTour()">i</button>
+<div class="toast" id="toast"></div>
+
+<section class="screen" id="scr-onb">
+<div class="big"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" rx="230" fill="#000"/><text x="510" y="612" font-family="-apple-system,Inter,system-ui,sans-serif" font-weight="900" font-size="540" fill="#fff" text-anchor="middle" letter-spacing="-22">24</text><circle cx="772" cy="594" r="42" fill="#FF3B30"/></svg></div>
+<p class="tag">You had to be there</p>
+<button class="cta blue" onclick="enterApp()">Inizia</button>
+</section>
+
+<section class="screen" id="scr-auth">
+<button class="auth-back" onclick="backToLanding()">‹</button>
+<div class="auth-head">
+<div class="auth-logo"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" rx="230" fill="#000"/><text x="510" y="612" font-family="-apple-system,Inter,system-ui,sans-serif" font-weight="900" font-size="540" fill="#fff" text-anchor="middle" letter-spacing="-22">24</text><circle cx="772" cy="594" r="42" fill="#FF3B30"/></svg></div>
+<h2 id="auth-title">Bentornato</h2>
+<p class="auth-sub" id="auth-subtitle">Accedi per continuare. I tuoi dati restano tuoi.</p>
+</div>
+<div class="auth-tabs">
+<div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Accedi</div>
+<div class="auth-tab" data-tab="signup" onclick="switchAuthTab('signup')">Registrati</div>
+</div>
+<div class="auth-form" id="auth-login">
+<input class="auth-input" type="email" id="li-email" placeholder="Email" autocomplete="email">
+<div class="pw-wrap"><input class="auth-input" type="password" id="li-pw" placeholder="Password" autocomplete="current-password"><button class="pw-eye" type="button" onclick="togglePw('li-pw',this)">👁</button></div>
+<button class="cta blue" onclick="doLogin()">Accedi</button>
+<a class="auth-link" onclick="showToast('Email di recupero inviata (demo)')">Password dimenticata?</a>
+</div>
+<div class="auth-form hidden" id="auth-signup">
+<input class="auth-input" type="text" id="su-name" placeholder="Come ti chiami">
+<input class="auth-input" type="email" id="su-email" placeholder="Email" autocomplete="email">
+<div class="pw-wrap"><input class="auth-input" type="password" id="su-pw" placeholder="Crea una password sicura" autocomplete="new-password" oninput="updatePwStrength()"><button class="pw-eye" type="button" onclick="togglePw('su-pw',this)">👁</button></div>
+<div class="pw-strength"><div class="pw-strength-bar" id="su-pw-bar"></div></div>
+<div class="pw-hint" id="su-pw-hint">Min 8 caratteri, una maiuscola, un numero</div>
+<input class="auth-input" type="date" id="su-dob">
+<label class="auth-check"><input type="checkbox" id="su-tos"><span>Ho 16+ anni e accetto <a onclick="showLegal('tos')">Termini</a> e <a onclick="showLegal('privacy')">Privacy</a></span></label>
+<button class="cta blue" onclick="doSignup()">Crea account</button>
+</div>
+<div class="auth-or">oppure</div>
+<button class="sso-btn apple" onclick="doSSO('Apple')"> Continua con Apple</button>
+<button class="sso-btn google" onclick="doSSO('Google')">G  Continua con Google</button>
+<div class="auth-trust">
+<div class="ti"><span class="ic">🔐</span><span><strong>End-to-end encryption</strong> · Password mai salvata in chiaro, sempre hashed.</span></div>
+<div class="ti"><span class="ic">🇪🇺</span><span><strong>Server in UE</strong> · Conforme GDPR. I tuoi dati non lasciano l\'Europa.</span></div>
+<div class="ti"><span class="ic">📍</span><span><strong>Posizione privata</strong> · Usiamo il GPS solo per sbloccare caselle, mai conservato.</span></div>
+<div class="ti"><span class="ic">🗑</span><span><strong>Diritto all\'oblio</strong> · Puoi cancellare account e tutti i dati in 2 tap.</span></div>
+</div>
+</section>
+
+<section class="screen" id="scr-map">
+<div class="mh">
+<div class="msearch">
+<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 001.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.5 6.5 0 00-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 005.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+<input placeholder="Cerca luoghi e piazze..."/>
+<div class="cpill" onclick="toggleCityPicker(event)"><span id="city-name">Bologna</span><span style="font-size:7px;opacity:0.85">▼</span></div>
+</div>
+<div class="opill" id="opill">👑 <span>Modalità Organizzatore</span></div>
+<div class="mstatus" id="mstatus"><div class="dot"></div><span id="mstext">Sei a Piazza Maggiore</span></div>
+</div>
+<div class="cpicker" id="cpicker">
+<div class="copt" data-city="bologna" onclick="selectCity('bologna')"><span><span class="ic">🍝</span>Bologna</span><span class="cn">20 caselle</span></div>
+<div class="copt" data-city="modena" onclick="selectCity('modena')"><span><span class="ic">🏎️</span>Modena</span><span class="cn">18 caselle</span></div>
+<div class="copt" data-city="sassuolo" onclick="selectCity('sassuolo')"><span><span class="ic">🟢</span>Sassuolo</span><span class="cn">12 caselle</span></div>
+</div>
+<button class="vtoggle" id="vtoggle" onclick="toggleMapView()" title="Cambia vista mappa">🛰️</button>
+<div id="map"></div>
+<div class="dtool" id="dtool"><div class="dl">Simula posizione</div><div id="dbtns"></div></div>
+<div class="sheet" id="sheet">
+<div class="hndl" onclick="toggleSheet()"></div>
+<div class="sh"><h3 id="shtitle">Vicino a te</h3><div class="scn" id="shcount">—</div></div>
+<div class="nlist" id="nlist"></div>
+</div>
+</section>
+
+<section class="screen" id="scr-exp">
+<div class="eh"><h1>Esplora</h1><p>I luoghi più caldi adesso</p></div>
+<div class="elist" id="elist"></div>
+</section>
+
+<section class="screen" id="scr-act">
+<div class="ah"><h1>Attività</h1></div>
+<div class="alist">
+<div class="ai"><div class="aic" style="background:#FF3B30">❤️</div><div class="aib"><p><strong>marti_99</strong> e altri 12 hanno messo like al tuo post a Piazza Maggiore</p><div class="ts">12 min fa</div></div></div>
+<div class="ai"><div class="aic" style="background:#007AFF">📍</div><div class="aib"><p>Sei vicino a <strong>Piazza Grande</strong> (Modena)</p><div class="ts">38 min fa</div></div></div>
+<div class="ai"><div class="aic" style="background:#5856D6">💬</div><div class="aib"><p><strong>leo.tx</strong> ha risposto al tuo messaggio</p><div class="ts">2 ore fa</div></div></div>
+<div class="ai"><div class="aic" style="background:#FF9500">🔥</div><div class="aib"><p>La casella di <strong>PalaPanini</strong> sold out per Modena Volley</p><div class="ts">5 ore fa</div></div></div>
+<div class="ai"><div class="aic" style="background:#34C759">✨</div><div class="aib"><p>Hai sbloccato il badge <strong>Esploratore d'Emilia</strong></p><div class="ts">Ieri</div></div></div>
+</div>
+</section>
+
+<section class="screen" id="scr-prof">
+<div class="ph">
+<div class="pav-big">G</div>
+<div class="pn">Gabriele Barigazzi</div>
+<div class="phn">@gabri</div>
+<div class="pbio">Founder di 24. Sassuolo → Modena → Bologna. Costruire cose che fanno uscire le persone.</div>
+<div class="crown hidden" id="crown">👑 ORGANIZZATORE</div>
+</div>
+<div class="pstats">
+<div class="pst"><div class="pnum">42</div><div class="plbl">Caselle</div></div>
+<div class="pst"><div class="pnum">128</div><div class="plbl">Post</div></div>
+<div class="pst"><div class="pnum">316</div><div class="plbl">Follower</div></div>
+<div class="pst"><div class="pnum">189</div><div class="plbl">Following</div></div>
+</div>
+<div class="psec">
+<h3>Accesso</h3>
+<div class="pli tr" onclick="toggleOrg()">
+<div class="pic" style="--c:#FF9500">👑</div>
+<div style="flex:1"><div class="ptx">Modalità Organizzatore</div><div style="font-size:10px;color:#8E8E93;margin-top:2px">Accesso illimitato a tutte le caselle</div></div>
+<div class="sw" id="orgsw"></div>
+</div>
+</div>
+<div class="psec">
+<h3>Caselle visitate</h3>
+<div class="pvis">
+<div class="vp">Piazza Maggiore</div><div class="vp">PalaDozza</div><div class="vp">Numa Club</div><div class="vp">Sporting Club</div><div class="vp">Vibra Club</div><div class="vp">Liceo Muratori</div><div class="vp">+38 altri</div>
+</div>
+</div>
+<div class="account-card" id="account-card">
+<div class="ac-i">✓</div>
+<div class="ac-b"><div class="ac-em" id="ac-email">guest@24.app</div><div class="ac-st">Account verificato · End-to-end encrypted</div></div>
+</div>
+<div class="psec">
+<h3>Sicurezza</h3>
+<div class="pli" onclick="showToast('Cambio password — demo')"><div class="pic" style="--c:#34C759">🔐</div><div style="flex:1"><div class="ptx">Cambia password</div><div class="sub">Ultimo cambio: oggi</div></div><div class="par">›</div></div>
+<div class="pli tr" onclick="toggle2FA()"><div class="pic" style="--c:#007AFF">🔒</div><div style="flex:1"><div class="ptx">Verifica in due passaggi</div><div class="sub">SMS o app autenticator</div></div><div class="sw" id="2fa-sw"></div></div>
+<div class="pli" onclick="showSessions()"><div class="pic" style="--c:#FF9500">📱</div><div style="flex:1"><div class="ptx">Dispositivi attivi</div><div class="sub">3 sessioni · 1 nuovo</div></div><div class="par">›</div></div>
+<div class="pli" onclick="showToast('Notifica accesso attiva su tutti i dispositivi')"><div class="pic" style="--c:#5856D6">🔔</div><div class="ptx">Notifiche di accesso</div><div class="par">›</div></div>
+</div>
+<div class="psec">
+<h3>Privacy</h3>
+<div class="pli tr" onclick="togglePrivate()"><div class="pic" style="--c:#AF52DE">👁</div><div style="flex:1"><div class="ptx">Modalità privata</div><div class="sub">Solo amici vedono i tuoi post</div></div><div class="sw" id="priv-sw"></div></div>
+<div class="pli" onclick="showLocationPrivacy()"><div class="pic" style="--c:#34C759">📍</div><div style="flex:1"><div class="ptx">Condivisione posizione</div><div class="sub">Solo al momento dello sblocco</div></div><div class="par">›</div></div>
+<div class="pli" onclick="showYourData()"><div class="pic" style="--c:#30B0C7">📊</div><div class="ptx">I tuoi dati salvati</div><div class="par">›</div></div>
+<div class="pli" onclick="downloadData()"><div class="pic" style="--c:#007AFF">⬇️</div><div style="flex:1"><div class="ptx">Scarica i miei dati</div><div class="sub">Esportazione GDPR</div></div><div class="par">›</div></div>
+<div class="pli" onclick="showLegal('privacy')"><div class="pic" style="--c:#8E8E93">📄</div><div class="ptx">Privacy Policy</div><div class="par">›</div></div>
+<div class="pli" onclick="showLegal('tos')"><div class="pic" style="--c:#8E8E93">📜</div><div class="ptx">Termini di servizio</div><div class="par">›</div></div>
+</div>
+<div class="psec">
+<h3>Account</h3>
+<div class="pli" onclick="doLogout()"><div class="pic" style="--c:#8E8E93">↪</div><div class="ptx">Esci</div><div class="par">›</div></div>
+<div class="pli danger" onclick="confirmDeleteAccount()"><div class="pic" style="--c:#FF3B30">🗑</div><div style="flex:1"><div class="ptx">Elimina account</div><div class="sub">Cancellazione definitiva di tutti i dati</div></div><div class="par">›</div></div>
+</div>
+<div class="psec">
+<h3>Demo</h3>
+<div class="pli" onclick="startTour()"><div class="pic" style="--c:#007AFF">?</div><div class="ptx">Tour guidato</div><div class="par">›</div></div>
+<div class="pli" onclick="copyShare()"><div class="pic" style="--c:#34C759">📤</div><div class="ptx">Condividi questa demo</div><div class="par">›</div></div>
+<div class="pli" onclick="resetDemo()"><div class="pic" style="--c:#FF3B30">🔄</div><div class="ptx">Reset demo</div><div class="par">›</div></div>
+</div>
+<div style="height:110px"></div>
+</section>
+
+<div class="modal" id="modal-c">
+<button class="mclose" onclick="closeCasella()">✕</button>
+<div class="mhdr" id="mhdr"></div>
+<div class="mbody" id="mbody"></div>
+<button class="fab" id="fab" onclick="openComposer()">+</button>
+</div>
+
+<div class="comp" id="comp">
+<div class="ch"><div class="l"><div class="gd"></div><span id="cloc">Pubblichi da: —</span></div><button class="cclose" onclick="closeComposer()">✕</button></div>
+<div class="cb">
+<div class="cp"><div class="ctl">Stai pubblicando in</div><div class="cnm" id="cpname">—</div></div>
+<div class="ctr">
+<div class="ct active" data-t="photo" onclick="setCT('photo')"><div class="i">📷</div><div class="l">Foto</div></div>
+<div class="ct" data-t="message" onclick="setCT('message')"><div class="i">💬</div><div class="l">Messaggio</div></div>
+<div class="ct" data-t="story" onclick="setCT('story')"><div class="i">✨</div><div class="l">Story</div></div>
+</div>
+<div class="cta-area" id="carea"><div class="i">📸</div><div class="l">Tocca per scattare</div></div>
+<textarea class="ctxt" id="ctxt" placeholder="Scrivi qualcosa..." maxlength="280"></textarea>
+</div>
+<div class="cf"><button class="csub" onclick="submitPost()">Pubblica nella casella</button></div>
+</div>
+
+<div class="tov" id="tov"><div class="tc" id="tc"></div></div>
+
+<nav class="tb" id="tb">
+<div class="ti active" data-s="map" onclick="switchTab('map')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg><div class="l">Mappa</div></div>
+<div class="ti" data-s="exp" onclick="switchTab('exp')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg><div class="l">Esplora</div></div>
+<div class="ti" data-s="act" onclick="switchTab('act')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><div class="l">Attività</div></div>
+<div class="ti" data-s="prof" onclick="switchTab('prof')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><div class="l">Profilo</div></div>
+</nav>
+<div class="hi"></div>
+</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" defer onerror="window.__lfail=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const CITIES={bologna:{n:'Bologna',e:'🍝',lat:44.4949,lon:11.3426,z:14},modena:{n:'Modena',e:'🏎️',lat:44.6478,lon:10.9252,z:14},sassuolo:{n:'Sassuolo',e:'🟢',lat:44.5503,lon:10.7831,z:15}};const CAT_ORDER=['centro','discoteca','stadio','palazzetto','circolo','universita','scuola'];const CAT_NAMES={centro:'Centro citta',discoteca:'Discoteche',stadio:'Stadi',palazzetto:'Palazzetti',circolo:'Circoli',universita:'Universita',scuola:'Scuole superiori'};
+const CASELLE={piazza_maggiore:{city:'bologna',name:'Piazza Maggiore',type:'Centro città · Piazza UNESCO',category:'centro',emoji:'🏛️',lat:44.4936561,lon:11.3430486,radius:80,c1:'#FF3B30',c2:'#FF9500',count:142,live:true,stories:[{u:'M',c1:'#FF3B30',c2:'#FF9500',n:'marti_99'},{u:'L',c1:'#5856D6',c2:'#007AFF',n:'leo.tx'},{u:'S',c1:'#34C759',c2:'#30B0C7',n:'sara_bo'}],posts:[{t:'photo',u:'marti_99',a:'M',c1:'#FF3B30',c2:'#FF9500',time:'2 min',emoji:'🌅',likes:187,liked:false},{t:'message',u:'leo.tx',a:'L',c1:'#5856D6',c2:'#007AFF',time:'8 min',text:'C\'è un sacco di gente stasera, qualcuno qui adesso? 👋',likes:45,liked:false},{t:'photo',u:'fra_bo',a:'F',c1:'#34C759',c2:'#30B0C7',time:'15 min',emoji:'🎶',likes:124,liked:true}]},piazza_verdi:{city:'bologna',name:'Piazza Verdi',type:'Centro città · Zona universitaria',category:'centro',emoji:'🏛️',lat:44.4962112,lon:11.3507627,radius:60,c1:'#FF3B30',c2:'#FF9500',count:89,live:true,stories:[{u:'V',c1:'#FF9500',c2:'#FFD60A',n:'val.studia'},{u:'D',c1:'#007AFF',c2:'#5856D6',n:'dany_uni'}],posts:[{t:'message',u:'val.studia',a:'V',c1:'#FF9500',c2:'#FFD60A',time:'ora',text:'Festa matricole al Cassero, chi viene? 🎉',likes:98,liked:false},{t:'photo',u:'dany_uni',a:'D',c1:'#007AFF',c2:'#5856D6',time:'12 min',emoji:'📚',likes:46,liked:false}]},piazza_santo_stefano:{city:'bologna',name:'Piazza Santo Stefano',type:'Centro città · Piazza delle Sette Chiese',category:'centro',emoji:'🏛️',lat:44.4921451,lon:11.3482911,radius:50,c1:'#FF3B30',c2:'#FF9500',count:54,live:true,stories:[{u:'S',c1:'#FF3B30',c2:'#FF9500',n:'sette.chiese'}],posts:[{t:'photo',u:'sette.chiese',a:'S',c1:'#FF3B30',c2:'#FF9500',time:'18 min',emoji:'⛪',likes:73,liked:false},{t:'message',u:'alessia.bo',a:'A',c1:'#5856D6',c2:'#007AFF',time:'35 min',text:'Aperitivo silenzioso qui è una vibe unica',likes:31,liked:false}]},numa_club:{city:'bologna',name:'Numa Club',type:'Discoteca · Underground',category:'discoteca',emoji:'🎧',lat:44.5154764,lon:11.3624002,radius:40,c1:'#AF52DE',c2:'#FF3B7B',count:234,live:true,stories:[{u:'D',c1:'#AF52DE',c2:'#FF3B7B',n:'dj.numa'},{u:'V',c1:'#5856D6',c2:'#007AFF',n:'vibe_night'}],posts:[{t:'photo',u:'dj.numa',a:'D',c1:'#AF52DE',c2:'#FF3B7B',time:'ora',emoji:'🎶',likes:312,liked:false},{t:'message',u:'vibe_night',a:'V',c1:'#5856D6',c2:'#007AFF',time:'5 min',text:'Set di stasera è una bomba, pista pienissima',likes:127,liked:false}]},locomotiv_club:{city:'bologna',name:'Locomotiv Club',type:'Discoteca · Live music',category:'discoteca',emoji:'🎧',lat:44.5073203,lon:11.3523062,radius:40,c1:'#AF52DE',c2:'#FF3B7B',count:156,live:true,stories:[{u:'L',c1:'#AF52DE',c2:'#FF3B7B',n:'locomotiv.bo'}],posts:[{t:'photo',u:'locomotiv.bo',a:'L',c1:'#AF52DE',c2:'#FF3B7B',time:'ora',emoji:'🎸',likes:189,liked:false},{t:'message',u:'indie_bo',a:'I',c1:'#5856D6',c2:'#007AFF',time:'12 min',text:'Live degli Iosonouncane fra 20 minuti, scendi',likes:87,liked:false}]},cassero:{city:'bologna',name:'Cassero',type:'Discoteca · LGBTQ+',category:'discoteca',emoji:'🎧',lat:44.502937,lon:11.33515,radius:40,c1:'#AF52DE',c2:'#FF3B7B',count:198,live:true,stories:[{u:'C',c1:'#FF3B7B',c2:'#AF52DE',n:'cassero.bo'},{u:'P',c1:'#FFD60A',c2:'#FF3B7B',n:'pride.bo'}],posts:[{t:'photo',u:'cassero.bo',a:'C',c1:'#FF3B7B',c2:'#AF52DE',time:'ora',emoji:'🌈',likes:267,liked:false},{t:'message',u:'pride.bo',a:'P',c1:'#FFD60A',c2:'#FF3B7B',time:'8 min',text:'Sabato gigante stasera, finalmente venerdì 🎉',likes:143,liked:false}]},stadio_dallara:{city:'bologna',name:'Stadio Renato Dall\'Ara',type:'Stadio · Bologna FC',category:'stadio',emoji:'⚽',lat:44.492317,lon:11.3099971,radius:120,c1:'#FF3B30',c2:'#AF52DE',count:287,live:true,stories:[{u:'B',c1:'#FF3B30',c2:'#AF52DE',n:'bfc_fan'},{u:'T',c1:'#FF9500',c2:'#FFD60A',n:'tifoso_bo'}],posts:[{t:'photo',u:'bfc_fan',a:'B',c1:'#FF3B30',c2:'#AF52DE',time:'ora',emoji:'🔴🔵',likes:412,liked:false},{t:'message',u:'tifoso_bo',a:'T',c1:'#FF9500',c2:'#FFD60A',time:'3 min',text:'CHE GOL DI ORSOLINI ⚡⚡⚡',likes:589,liked:true}]},paladozza:{city:'bologna',name:'PalaDozza',type:'Palazzetto · Sport e concerti',category:'palazzetto',emoji:'🏟️',lat:44.499533,lon:11.3327751,radius:70,c1:'#007AFF',c2:'#30B0C7',count:124,live:true,stories:[{u:'P',c1:'#007AFF',c2:'#30B0C7',n:'paladozza.bo'}],posts:[{t:'photo',u:'paladozza.bo',a:'P',c1:'#007AFF',c2:'#30B0C7',time:'4 min',emoji:'🏀',likes:187,liked:false},{t:'message',u:'basket_bo',a:'B',c1:'#5856D6',c2:'#007AFF',time:'22 min',text:'Sold out per stasera, atmosfera incredibile',likes:76,liked:false}]},virtus_arena:{city:'bologna',name:'Virtus Segafredo Arena',type:'Palazzetto · Virtus Bologna',category:'palazzetto',emoji:'🏟️',lat:44.5276912,lon:11.3465486,radius:100,c1:'#007AFF',c2:'#30B0C7',count:198,live:true,stories:[{u:'V',c1:'#000',c2:'#FFD60A',n:'virtus.bo'},{u:'S',c1:'#007AFF',c2:'#5856D6',n:'segafredo.bo'}],posts:[{t:'photo',u:'virtus.bo',a:'V',c1:'#000',c2:'#FFD60A',time:'12 min',emoji:'🖤💛',likes:254,liked:false},{t:'message',u:'vu.nere',a:'VN',c1:'#007AFF',c2:'#5856D6',time:'25 min',text:'Cestino di Belinelli che spacca, palazzetto in piedi',likes:176,liked:false}]},circolo_tennis_bo:{city:'bologna',name:'Circolo Tennis Bologna',type:'Circolo privato · Tennis e ristorante',category:'circolo',emoji:'🎾',lat:44.4818,lon:11.3185,radius:60,c1:'#34C759',c2:'#30B0C7',count:28,live:false,stories:[{u:'A',c1:'#34C759',c2:'#30B0C7',n:'ale.tennis'}],posts:[{t:'photo',u:'ale.tennis',a:'A',c1:'#34C759',c2:'#30B0C7',time:'1h',emoji:'🎾',likes:42,liked:false},{t:'message',u:'gpv.club',a:'G',c1:'#5856D6',c2:'#007AFF',time:'3h',text:'Torneo over 35 sabato mattina, iscrizioni in segreteria',likes:18,liked:false}]},circolo_caccia_bo:{city:'bologna',name:'Circolo della Caccia',type:'Circolo privato · Storico',category:'circolo',emoji:'🎾',lat:44.4927728,lon:11.3461935,radius:40,c1:'#34C759',c2:'#30B0C7',count:14,live:false,stories:[],posts:[{t:'message',u:'caccia.bo',a:'C',c1:'#34C759',c2:'#30B0C7',time:'5h',text:'Cena soci venerdì sera, conferma entro mercoledì',likes:9,liked:false}]},aula_magna_unibo:{city:'bologna',name:'Aula Magna Santa Lucia',type:'Università · Sede magna UNIBO',category:'universita',emoji:'🎓',lat:44.4894876,lon:11.3474685,radius:50,c1:'#5856D6',c2:'#007AFF',count:32,live:false,stories:[],posts:[{t:'message',u:'unibo.official',a:'U',c1:'#007AFF',c2:'#5856D6',time:'3h',text:'Conferenza di Apertura Anno Accademico — domani ore 10',likes:91,liked:false}]},palazzo_hercolani:{city:'bologna',name:'Palazzo Hercolani',type:'Università · Scienze politiche UNIBO',category:'universita',emoji:'🎓',lat:44.4908861,lon:11.3536074,radius:50,c1:'#5856D6',c2:'#007AFF',count:24,live:true,stories:[{u:'S',c1:'#5856D6',c2:'#007AFF',n:'scipol.unibo'}],posts:[{t:'message',u:'scipol.unibo',a:'S',c1:'#5856D6',c2:'#007AFF',time:'1h',text:'Lezione di Diritto Costituzionale spostata in aula G',likes:38,liked:false},{t:'photo',u:'matteo.bo',a:'M',c1:'#007AFF',c2:'#5856D6',time:'2h',emoji:'📚',likes:19,liked:false}]},polo_ingegneria_bo:{city:'bologna',name:'Polo Ingegneria UNIBO',type:'Università · Viale Risorgimento',category:'universita',emoji:'🎓',lat:44.5063,lon:11.3263,radius:70,c1:'#5856D6',c2:'#007AFF',count:48,live:true,stories:[{u:'I',c1:'#5856D6',c2:'#007AFF',n:'ing.unibo'}],posts:[{t:'message',u:'ing.unibo',a:'I',c1:'#5856D6',c2:'#007AFF',time:'15 min',text:'Lab di Elettrotecnica oggi alle 14 in via Risorgimento',likes:62,liked:false},{t:'message',u:'paolo.ing',a:'P',c1:'#5856D6',c2:'#007AFF',time:'3h',text:'Esame di Analisi I a luglio, chi viene a studiare in biblioteca?',likes:27,liked:false}]},liceo_galvani:{city:'bologna',name:'Liceo Galvani',type:'Scuola superiore · Liceo Classico',category:'scuola',emoji:'📚',lat:44.4892351,lon:11.3475049,radius:40,c1:'#FFD60A',c2:'#FF9500',count:47,live:true,stories:[{u:'E',c1:'#FFD60A',c2:'#FF9500',n:'ele_galvani'},{u:'M',c1:'#FF3B30',c2:'#FF9500',n:'matti.4b'}],posts:[{t:'message',u:'ele_galvani',a:'E',c1:'#FFD60A',c2:'#FF9500',time:'10 min',text:'Assemblea oggi pomeriggio, si discute viaggio di quinta 🛫',likes:68,liked:false},{t:'photo',u:'matti.4b',a:'M',c1:'#FF3B30',c2:'#FF9500',time:'32 min',emoji:'☕',likes:41,liked:true}]},liceo_minghetti:{city:'bologna',name:'Liceo Minghetti',type:'Scuola superiore · Liceo Classico',category:'scuola',emoji:'📚',lat:44.4912456,lon:11.3370342,radius:40,c1:'#FFD60A',c2:'#FF9500',count:38,live:true,stories:[{u:'G',c1:'#FFD60A',c2:'#FF9500',n:'giulia.minghetti'}],posts:[{t:'message',u:'giulia.minghetti',a:'G',c1:'#FFD60A',c2:'#FF9500',time:'25 min',text:'Verifica di greco rimandata 🙌',likes:82,liked:false},{t:'photo',u:'marco.3a',a:'M',c1:'#FF3B30',c2:'#FF9500',time:'1h',emoji:'📖',likes:26,liked:false}]},liceo_righi:{city:'bologna',name:'Liceo Righi',type:'Scuola superiore · Liceo Scientifico',category:'scuola',emoji:'📚',lat:44.492145,lon:11.3293485,radius:40,c1:'#FFD60A',c2:'#FF9500',count:52,live:true,stories:[{u:'R',c1:'#FFD60A',c2:'#FF9500',n:'righi.5d'}],posts:[{t:'message',u:'righi.5d',a:'R',c1:'#FFD60A',c2:'#FF9500',time:'30 min',text:'Simulazione di seconda prova venerdì, ripasso fisica in palestra',likes:73,liked:false},{t:'photo',u:'luca.righi',a:'L',c1:'#FF3B30',c2:'#FF9500',time:'1h',emoji:'🧪',likes:34,liked:false}]},liceo_copernico:{city:'bologna',name:'Liceo Copernico',type:'Scuola superiore · Liceo Scientifico',category:'scuola',emoji:'📚',lat:44.5074011,lon:11.367642,radius:40,c1:'#FFD60A',c2:'#FF9500',count:29,live:true,stories:[{u:'C',c1:'#FFD60A',c2:'#FF9500',n:'copernico.bo'}],posts:[{t:'message',u:'copernico.bo',a:'C',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Spettacolo del corso teatro venerdì sera, biglietti in vicepresidenza',likes:24,liked:false}]},liceo_sabin:{city:'bologna',name:'Liceo Sabin',type:'Scuola superiore · Scientifico/Linguistico',category:'scuola',emoji:'📚',lat:44.5068733,lon:11.3474309,radius:40,c1:'#FFD60A',c2:'#FF9500',count:31,live:true,stories:[{u:'S',c1:'#FFD60A',c2:'#FF9500',n:'sabin.bo'}],posts:[{t:'message',u:'sabin.bo',a:'S',c1:'#FFD60A',c2:'#FF9500',time:'2h',text:'Stage in Spagna confermato per fine maggio, riunione genitori giovedì',likes:39,liked:false}]},itis_belluzzi:{city:'bologna',name:'ITIS Belluzzi-Fioravanti',type:'Scuola superiore · Tecnico industriale',category:'scuola',emoji:'📚',lat:44.4897743,lon:11.2852544,radius:50,c1:'#FFD60A',c2:'#FF9500',count:26,live:true,stories:[],posts:[{t:'message',u:'belluzzi.5a',a:'B',c1:'#FFD60A',c2:'#FF9500',time:'45 min',text:'Stage in azienda confermato per il 15, lista presso prof. Ferri',likes:31,liked:false}]},itc_salvemini:{city:'bologna',name:'ITC Salvemini',type:'Scuola superiore · Economico',category:'scuola',emoji:'📚',lat:44.4816874,lon:11.2680156,radius:40,c1:'#FFD60A',c2:'#FF9500',count:23,live:true,stories:[],posts:[{t:'message',u:'salvemini.bo',a:'S',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Open Day sabato 18, venite a vedere i progetti di simulazione impresa',likes:28,liked:false}]},piazza_grande_mo:{city:'modena',name:'Piazza Grande',type:'Centro città · UNESCO',category:'centro',emoji:'⛪',lat:44.6459433,lon:10.9256171,radius:70,c1:'#FF3B30',c2:'#FF9500',count:98,live:true,stories:[{u:'A',c1:'#FF3B30',c2:'#FF9500',n:'andre_mo'},{u:'G',c1:'#34C759',c2:'#30B0C7',n:'giada.mo'}],posts:[{t:'photo',u:'andre_mo',a:'A',c1:'#FF3B30',c2:'#FF9500',time:'ora',emoji:'🏛️',likes:134,liked:false},{t:'message',u:'giada.mo',a:'G',c1:'#34C759',c2:'#30B0C7',time:'4 min',text:'Aperitivo sotto la Ghirlandina, chi si aggiunge? 🍷',likes:62,liked:false}]},piazza_roma_mo:{city:'modena',name:'Piazza Roma',type:'Centro città · Palazzo Ducale',category:'centro',emoji:'🏰',lat:44.6480667,lon:10.9289201,radius:60,c1:'#FF3B30',c2:'#FF9500',count:48,live:true,stories:[{u:'M',c1:'#007AFF',c2:'#5856D6',n:'mil.cadetto'}],posts:[{t:'message',u:'mil.cadetto',a:'M',c1:'#007AFF',c2:'#5856D6',time:'12 min',text:'Cambio guardia all\'Accademia stamattina alle 11',likes:58,liked:false},{t:'photo',u:'monica.mo',a:'M',c1:'#FF9500',c2:'#FFD60A',time:'35 min',emoji:'🎖️',likes:34,liked:false}]},piazza_xx_settembre:{city:'modena',name:'Piazza XX Settembre',type:'Centro città · Piazza commerciale',category:'centro',emoji:'🏛️',lat:44.6451785,lon:10.926019,radius:50,c1:'#FF3B30',c2:'#FF9500',count:37,live:true,stories:[],posts:[{t:'message',u:'xxset.mo',a:'X',c1:'#FF3B30',c2:'#FF9500',time:'1h',text:'Mercatino vintage del sabato fino alle 19',likes:24,liked:false}]},vibra_club:{city:'modena',name:'Vibra Club',type:'Discoteca · Live music',category:'discoteca',emoji:'🎧',lat:44.6553089,lon:10.9171458,radius:50,c1:'#AF52DE',c2:'#FF3B7B',count:187,live:true,stories:[{u:'D',c1:'#AF52DE',c2:'#FF3B7B',n:'dj.vibra'},{u:'N',c1:'#5856D6',c2:'#007AFF',n:'night.mo'}],posts:[{t:'photo',u:'dj.vibra',a:'D',c1:'#AF52DE',c2:'#FF3B7B',time:'ora',emoji:'🎶',likes:289,liked:false},{t:'message',u:'night.mo',a:'N',c1:'#5856D6',c2:'#007AFF',time:'7 min',text:'Pista pienissima stasera 🔥 set fino alle 4',likes:124,liked:false}]},snoopy:{city:'modena',name:'Snoopy',type:'Discoteca · Storica modenese',category:'discoteca',emoji:'🎧',lat:44.6542426,lon:10.9188743,radius:50,c1:'#AF52DE',c2:'#FF3B7B',count:142,live:true,stories:[{u:'S',c1:'#AF52DE',c2:'#FF3B7B',n:'snoopy.mo'}],posts:[{t:'photo',u:'snoopy.mo',a:'S',c1:'#AF52DE',c2:'#FF3B7B',time:'15 min',emoji:'💃',likes:198,liked:false},{t:'message',u:'storia_mo',a:'M',c1:'#5856D6',c2:'#007AFF',time:'25 min',text:'Stasera revival 90s/2000s, atmosfera leggendaria',likes:87,liked:false}]},tube_club:{city:'modena',name:'Tube Club',type:'Discoteca · Elettronica',category:'discoteca',emoji:'🎧',lat:44.6538936,lon:10.9358862,radius:40,c1:'#AF52DE',c2:'#FF3B7B',count:76,live:true,stories:[{u:'T',c1:'#AF52DE',c2:'#FF3B7B',n:'tube.mo'}],posts:[{t:'photo',u:'tube.mo',a:'T',c1:'#AF52DE',c2:'#FF3B7B',time:'30 min',emoji:'🎧',likes:98,liked:false}]},stadio_braglia:{city:'modena',name:'Stadio Alberto Braglia',type:'Stadio · Modena FC',category:'stadio',emoji:'⚽',lat:44.6534273,lon:10.9230941,radius:110,c1:'#FF3B30',c2:'#AF52DE',count:156,live:true,stories:[{u:'C',c1:'#FFD60A',c2:'#FF9500',n:'canarino_mo'},{u:'U',c1:'#FF3B30',c2:'#FF9500',n:'ultras_mo'}],posts:[{t:'photo',u:'canarino_mo',a:'C',c1:'#FFD60A',c2:'#FF9500',time:'5 min',emoji:'💛',likes:234,liked:false},{t:'message',u:'ultras_mo',a:'U',c1:'#FF3B30',c2:'#FF9500',time:'14 min',text:'CURVA MONTAGNANI SOLD OUT! 🟡🔵',likes:312,liked:false}]},palapanini:{city:'modena',name:'PalaPanini',type:'Palazzetto · Modena Volley',category:'palazzetto',emoji:'🏐',lat:44.644863,lon:10.9538162,radius:80,c1:'#007AFF',c2:'#30B0C7',count:167,live:true,stories:[{u:'V',c1:'#007AFF',c2:'#5856D6',n:'volley_mo'},{u:'G',c1:'#FFD60A',c2:'#FF9500',n:'gialla.mo'}],posts:[{t:'photo',u:'volley_mo',a:'V',c1:'#007AFF',c2:'#5856D6',time:'3 min',emoji:'🏐',likes:267,liked:false},{t:'message',u:'gialla.mo',a:'G',c1:'#FFD60A',c2:'#FF9500',time:'15 min',text:'Sold out per Modena vs Civitanova! Atmosfera pazzesca',likes:187,liked:true}]},palamolza:{city:'modena',name:'PalaMolza',type:'Palazzetto · Sport polivalente',category:'palazzetto',emoji:'🏟️',lat:44.651172,lon:10.9199769,radius:60,c1:'#007AFF',c2:'#30B0C7',count:42,live:true,stories:[],posts:[{t:'message',u:'basket.mo',a:'B',c1:'#007AFF',c2:'#30B0C7',time:'1h',text:'Allenamento Under 16 alle 17, campo 2',likes:28,liked:false}]},mammut_modena:{city:'modena',name:'Mammut Sport & Wellness Club',type:'Circolo privato · Sport e benessere',category:'circolo',emoji:'🎾',lat:44.6264762,lon:10.9739638,radius:80,c1:'#34C759',c2:'#30B0C7',count:67,live:true,stories:[{u:'M',c1:'#34C759',c2:'#30B0C7',n:'mammut.mo'}],posts:[{t:'photo',u:'mammut.mo',a:'M',c1:'#34C759',c2:'#30B0C7',time:'40 min',emoji:'🏊',likes:89,liked:false},{t:'message',u:'fitmodena',a:'F',c1:'#5856D6',c2:'#007AFF',time:'1h',text:'Spinning di gruppo stasera alle 19, prenotazioni in app',likes:34,liked:false}]},circolo_tennis_mo:{city:'modena',name:'Circolo Tennis Modena',type:'Circolo privato · Tennis storico',category:'circolo',emoji:'🎾',lat:44.6427,lon:10.9296,radius:50,c1:'#34C759',c2:'#30B0C7',count:28,live:false,stories:[],posts:[{t:'message',u:'tennis.mo',a:'T',c1:'#34C759',c2:'#30B0C7',time:'2h',text:'Lezione collettiva sabato mattina, due posti liberi',likes:16,liked:false}]},unimore_sef:{city:'modena',name:'UniMore Sant\'Eufemia',type:'Università di Modena · Economia',category:'universita',emoji:'🎓',lat:44.6450538,lon:10.9281755,radius:60,c1:'#5856D6',c2:'#007AFF',count:34,live:true,stories:[{u:'E',c1:'#5856D6',c2:'#007AFF',n:'economia_mo'}],posts:[{t:'message',u:'economia_mo',a:'E',c1:'#5856D6',c2:'#007AFF',time:'2h',text:'Lezione di Macroeconomia anticipata alle 9 di domani',likes:56,liked:false},{t:'photo',u:'unimore.fan',a:'U',c1:'#007AFF',c2:'#5856D6',time:'5h',emoji:'📚',likes:24,liked:false}]},unimore_vignolese:{city:'modena',name:'UniMore Polo Vignolese',type:'Università di Modena · Ingegneria',category:'universita',emoji:'🎓',lat:44.628,lon:10.9437,radius:70,c1:'#5856D6',c2:'#007AFF',count:21,live:true,stories:[],posts:[{t:'message',u:'ing.unimore',a:'I',c1:'#5856D6',c2:'#007AFF',time:'1h',text:'Lab di Elettronica posticipato a giovedì, ore 14:30',likes:32,liked:false}]},liceo_muratori:{city:'modena',name:'Liceo Muratori-San Carlo',type:'Scuola superiore · Liceo Classico',category:'scuola',emoji:'📚',lat:44.6495791,lon:10.9284514,radius:40,c1:'#FFD60A',c2:'#FF9500',count:52,live:true,stories:[{u:'M',c1:'#FFD60A',c2:'#FF9500',n:'matty.5c'},{u:'L',c1:'#FF3B30',c2:'#FF9500',n:'laura.3b'}],posts:[{t:'message',u:'matty.5c',a:'M',c1:'#FFD60A',c2:'#FF9500',time:'ora',text:'Domani simulazione di seconda prova 😱',likes:87,liked:false},{t:'photo',u:'laura.3b',a:'L',c1:'#FF3B30',c2:'#FF9500',time:'25 min',emoji:'☕',likes:43,liked:true}]},liceo_wiligelmo:{city:'modena',name:'Liceo Wiligelmo',type:'Scuola superiore · Liceo Scientifico',category:'scuola',emoji:'📚',lat:44.6412019,lon:10.89935,radius:40,c1:'#FFD60A',c2:'#FF9500',count:41,live:true,stories:[{u:'W',c1:'#FFD60A',c2:'#FF9500',n:'wili.5e'}],posts:[{t:'message',u:'wili.5e',a:'W',c1:'#FFD60A',c2:'#FF9500',time:'30 min',text:'Stage al CNR per chi è interessato, conferme entro venerdì',likes:58,liked:false}]},liceo_tassoni:{city:'modena',name:'Liceo Tassoni',type:'Scuola superiore · Liceo Scientifico',category:'scuola',emoji:'📚',lat:44.6468888,lon:10.9351794,radius:40,c1:'#FFD60A',c2:'#FF9500',count:33,live:true,stories:[],posts:[{t:'message',u:'tassoni.mo',a:'T',c1:'#FFD60A',c2:'#FF9500',time:'45 min',text:'Assemblea oggi, ordine del giorno: viaggio di istruzione 🛫',likes:47,liked:false}]},liceo_sigonio:{city:'modena',name:'Liceo Sigonio',type:'Scuola superiore · Scienze umane',category:'scuola',emoji:'📚',lat:44.6536071,lon:10.9354768,radius:40,c1:'#FFD60A',c2:'#FF9500',count:27,live:true,stories:[],posts:[{t:'message',u:'sigonio.mo',a:'S',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Progetto Erasmus aperto a tutte le quarte, brief martedì',likes:31,liked:false}]},itis_corni:{city:'modena',name:'ITIS Corni',type:'Scuola superiore · Tecnico industriale',category:'scuola',emoji:'📚',lat:44.6489346,lon:10.9186077,radius:50,c1:'#FFD60A',c2:'#FF9500',count:36,live:true,stories:[{u:'C',c1:'#FFD60A',c2:'#FF9500',n:'corni.5b'}],posts:[{t:'message',u:'corni.5b',a:'C',c1:'#FFD60A',c2:'#FF9500',time:'2h',text:'Visita aziendale Ferrari giovedì, partenza ore 8 dal cortile',likes:74,liked:false}]},piazza_garibaldi:{city:'sassuolo',name:'Piazza Garibaldi',type:'Centro città · Cuore di Sassuolo',category:'centro',emoji:'🏛️',lat:44.5409906,lon:10.7829037,radius:50,c1:'#FF3B30',c2:'#FF9500',count:56,live:true,stories:[{u:'S',c1:'#FF3B30',c2:'#FF9500',n:'sasso_locale'}],posts:[{t:'photo',u:'sasso_locale',a:'S',c1:'#FF3B30',c2:'#FF9500',time:'10 min',emoji:'🌳',likes:78,liked:false},{t:'message',u:'ele_sasso',a:'E',c1:'#FF9500',c2:'#FFD60A',time:'28 min',text:'Mercatino del sabato in piazza, c\'è un sacco di roba bella',likes:34,liked:false}]},piazzale_rosa:{city:'sassuolo',name:'Piazzale della Rosa',type:'Centro città · Ritrovo serale',category:'centro',emoji:'🌹',lat:44.5423203,lon:10.7804387,radius:45,c1:'#FF3B30',c2:'#FF9500',count:62,live:true,stories:[{u:'M',c1:'#FF3B30',c2:'#FF9500',n:'matty.sa'}],posts:[{t:'message',u:'matty.sa',a:'M',c1:'#FF3B30',c2:'#FF9500',time:'ora',text:'Stasera tutti in Piazzale, suona qualcuno alle 22 🎸',likes:89,liked:false},{t:'photo',u:'ric.sasso',a:'R',c1:'#5856D6',c2:'#007AFF',time:'18 min',emoji:'🍻',likes:57,liked:false}]},piazza_martiri_sa:{city:'sassuolo',name:'Piazza Martiri Partigiani',type:'Centro città · Storica',category:'centro',emoji:'🏛️',lat:44.54162,lon:10.7817923,radius:40,c1:'#FF3B30',c2:'#FF9500',count:24,live:true,stories:[],posts:[{t:'message',u:'storia.sa',a:'S',c1:'#FF3B30',c2:'#FF9500',time:'3h',text:'Cerimonia 25 aprile prossima settimana, partecipate',likes:38,liked:false}]},esseti_discobar:{city:'sassuolo',name:'Esseti Discobar',type:'Discoteca · Salvarola Terme',category:'discoteca',emoji:'🎧',lat:44.5184853,lon:10.765704,radius:50,c1:'#AF52DE',c2:'#FF3B7B',count:96,live:true,stories:[{u:'E',c1:'#AF52DE',c2:'#FF3B7B',n:'esseti.disco'},{u:'S',c1:'#5856D6',c2:'#007AFF',n:'salvarola.night'}],posts:[{t:'photo',u:'esseti.disco',a:'E',c1:'#AF52DE',c2:'#FF3B7B',time:'12 min',emoji:'🌃',likes:142,liked:false},{t:'message',u:'salvarola.night',a:'S',c1:'#5856D6',c2:'#007AFF',time:'25 min',text:'Aperitivo a bordo piscina fino alle 22, poi pista aperta 🍹',likes:67,liked:false},{t:'photo',u:'collina.sasso',a:'C',c1:'#FF3B30',c2:'#FF9500',time:'45 min',emoji:'🍸',likes:48,liked:true}]},camarta_disco:{city:'sassuolo',name:"Ca'Marta Disco Dinner",type:'Discoteca + ristorante · Anche centro sportivo',category:'discoteca',emoji:'🎧',lat:44.5602301,lon:10.791654,radius:50,c1:'#AF52DE',c2:'#FF3B7B',count:113,live:true,stories:[{u:'C',c1:'#AF52DE',c2:'#FF3B7B',n:'camarta.club'},{u:'F',c1:'#FFD60A',c2:'#FF9500',n:'food.fun'}],posts:[{t:'photo',u:'camarta.club',a:'C',c1:'#AF52DE',c2:'#FF3B7B',time:'8 min',emoji:'🪩',likes:178,liked:false},{t:'message',u:'food.fun',a:'F',c1:'#FFD60A',c2:'#FF9500',time:'20 min',text:'Sabato apericena dalle 19, dopo cena pista aperta 🎶',likes:92,liked:true},{t:'photo',u:'sasso.club',a:'S',c1:'#FF3B30',c2:'#FF9500',time:'1h',emoji:'🍕',likes:54,liked:false}]},stadio_enzo_ricci:{city:'sassuolo',name:'Stadio Enzo Ricci',type:'Stadio · Casa storica Sassuolo Calcio',category:'stadio',emoji:'⚽',lat:44.5405531,lon:10.7892106,radius:90,c1:'#FF3B30',c2:'#AF52DE',count:48,live:true,stories:[{u:'N',c1:'#34C759',c2:'#007AFF',n:'neroverdi'}],posts:[{t:'photo',u:'neroverdi',a:'N',c1:'#34C759',c2:'#007AFF',time:'8 min',emoji:'🟢⚫',likes:92,liked:false},{t:'message',u:'primavera_sa',a:'P',c1:'#FF3B30',c2:'#FF9500',time:'25 min',text:'Sassuolo Primavera in campo, partita aperta a tutti',likes:38,liked:false}]},sporting_club_sa:{city:'sassuolo',name:'Sporting Club Sassuolo',type:'Circolo privato · Tennis Serie A1, padel, piscine (S. Michele dei Mucchietti)',category:'circolo',emoji:'🎾',lat:44.5092985,lon:10.7585709,radius:80,c1:'#34C759',c2:'#30B0C7',count:67,live:true,stories:[{u:'S',c1:'#34C759',c2:'#30B0C7',n:'sporting.sa'},{u:'P',c1:'#FFD60A',c2:'#FF9500',n:'padel.sa'}],posts:[{t:'photo',u:'sporting.sa',a:'S',c1:'#34C759',c2:'#30B0C7',time:'20 min',emoji:'🎾',likes:98,liked:false},{t:'message',u:'padel.sa',a:'P',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Tornei padel del weekend già pieni, prenotate per quello dopo',likes:47,liked:false},{t:'message',u:'soci.sa',a:'M',c1:'#5856D6',c2:'#007AFF',time:'3h',text:'Aperitivo a bordo piscina venerdì sera, soci e ospiti',likes:31,liked:false}]},liceo_formiggini:{city:'sassuolo',name:'Liceo Formiggini',type:'Scuola superiore · Scientifico/Linguistico',category:'scuola',emoji:'📚',lat:44.5261367,lon:10.7686834,radius:40,c1:'#FFD60A',c2:'#FF9500',count:47,live:true,stories:[{u:'V',c1:'#FFD60A',c2:'#FF9500',n:'vale.5b'},{u:'M',c1:'#FF3B30',c2:'#FF9500',n:'matti.formiggini'}],posts:[{t:'message',u:'vale.5b',a:'V',c1:'#FFD60A',c2:'#FF9500',time:'15 min',text:'Verifica di matematica spostata a venerdì 🙌',likes:78,liked:false},{t:'photo',u:'matti.formiggini',a:'M',c1:'#FF3B30',c2:'#FF9500',time:'40 min',emoji:'☕',likes:41,liked:true}]},itis_volta:{city:'sassuolo',name:'ITIS A. Volta',type:'Scuola superiore · Tecnico industriale',category:'scuola',emoji:'📚',lat:44.5447,lon:10.7775,radius:50,c1:'#FFD60A',c2:'#FF9500',count:38,live:true,stories:[{u:'V',c1:'#FFD60A',c2:'#FF9500',n:'volta.5a'}],posts:[{t:'message',u:'volta.5a',a:'V',c1:'#FFD60A',c2:'#FF9500',time:'30 min',text:'Progetto di robotica al lab oggi pomeriggio, chi viene?',likes:62,liked:false},{t:'photo',u:'tecno.sa',a:'T',c1:'#FF3B30',c2:'#FF9500',time:'1h',emoji:'🔧',likes:28,liked:false}]},iis_baggi:{city:'sassuolo',name:'IIS Baggi',type:'Scuola superiore · Commerciale e geometri',category:'scuola',emoji:'📚',lat:44.553,lon:10.78,radius:50,c1:'#FFD60A',c2:'#FF9500',count:32,live:true,stories:[{u:'B',c1:'#FFD60A',c2:'#FF9500',n:'baggi.5c'}],posts:[{t:'message',u:'baggi.5c',a:'B',c1:'#FFD60A',c2:'#FF9500',time:'45 min',text:'Stage al comune confermato per maggio, lista in segreteria',likes:47,liked:false}]},iis_elsa_morante:{city:'sassuolo',name:'IIS Elsa Morante',type:'Scuola superiore · Professionale servizi commerciali',category:'scuola',emoji:'📚',lat:44.5398731,lon:10.7947647,radius:50,c1:'#FFD60A',c2:'#FF9500',count:29,live:true,stories:[{u:'M',c1:'#FFD60A',c2:'#FF9500',n:'morante.4a'}],posts:[{t:'message',u:'morante.4a',a:'M',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Tirocinio al centro commerciale parte la settimana prossima',likes:35,liked:false}]},ipsia_don_magnani:{city:'sassuolo',name:'IPSIA Don Magnani',type:'Scuola superiore · Industria e artigianato',category:'scuola',emoji:'📚',lat:44.5399901,lon:10.7707041,radius:50,c1:'#FFD60A',c2:'#FF9500',count:26,live:true,stories:[],posts:[{t:'message',u:'donmagnani.sa',a:'D',c1:'#FFD60A',c2:'#FF9500',time:'1h',text:'Laboratorio di ceramica venerdì pomeriggio, materiali forniti',likes:24,liked:false}]}};
+const SIMOPTS={bologna:[{k:'piazza_maggiore',e:'📍',l:'Piazza Maggiore'},{k:'stadio_dallara',e:'⚽',l:'Stadio Dall\'Ara'},{k:'paladozza',e:'🏀',l:'PalaDozza'},{k:'liceo_galvani',e:'📚',l:'Liceo Galvani'}],modena:[{k:'piazza_grande_mo',e:'⛪',l:'Piazza Grande'},{k:'palapanini',e:'🏐',l:'PalaPanini'},{k:'mammut_modena',e:'🎾',l:'Mammut'},{k:'liceo_muratori',e:'📚',l:'Liceo Muratori'}],sassuolo:[{k:'piazza_garibaldi',e:'🏛️',l:'Piazza Garibaldi'},{k:'esseti_discobar',e:'🎧',l:'Esseti'},{k:'camarta_disco',e:'🪩',l:"Ca'Marta"},{k:'sporting_club_sa',e:'🎾',l:'Sporting Club'}]};
+const FAR={lat:45.4642,lon:9.1900,name:'Milano (lontano)'};
+
+const SUPABASE_URL='https://khyjhqkiujuxlfqjjbar.supabase.co';const SUPABASE_ANON='sb_publishable_agDwfht27jxEs2qs7dankA_h5kRWLq5';const supa=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON):null;
+let state={city:'bologna',userLat:44.4936,userLon:11.3430,userLoc:'piazza_maggiore',unlocked:{},currentC:null,sheetExp:false,scr:'map',ct:'photo',isOrg:false,mapView:'street',user:null,has2FA:false,isPrivate:false};
+
+try{
+  const s=localStorage.getItem('24h_state');
+  if(s) state={...state,...JSON.parse(s)};
+  const a=localStorage.getItem('24h_auth');
+  if(a) state.user=JSON.parse(a);
+  document.getElementById('scr-onb').classList.add('active');
+}catch(e){}
+
+function saveState(){try{localStorage.setItem('24h_state',JSON.stringify({city:state.city,userLat:state.userLat,userLon:state.userLon,userLoc:state.userLoc,unlocked:state.unlocked,isOrg:state.isOrg,mapView:state.mapView}))}catch(e){}}
+
+async function enterApp(){
+  localStorage.setItem('24h_onb','1');
+  document.getElementById('scr-onb').classList.remove('active');
+  let authed=false;
+  if(supa){
+    const {data}=await supa.auth.getSession();
+    if(data&&data.session){
+      const u=data.session.user;
+      state.user={email:u.email,name:(u.user_metadata&&u.user_metadata.name)||u.email.split('@')[0],id:u.id,authMethod:'email'};
+      updateAccountUI();
+      authed=true;
+    }
+  }
+  if(!authed){
+    const local=localStorage.getItem('24h_auth');
+    if(local){try{state.user=JSON.parse(local);updateAccountUI();authed=true}catch(e){}}
+  }
+  if(authed){
+    if(!localStorage.getItem('24h_tour'))setTimeout(startTour,400);
+    switchTab('map');
+  }else{
+    document.getElementById('scr-auth').classList.add('active');
+  }
+}
+function backToLanding(){
+  document.getElementById('scr-auth').classList.remove('active');
+  document.getElementById('scr-onb').classList.add('active');
+}
+function switchAuthTab(t){
+  document.querySelectorAll('.auth-tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===t));
+  document.getElementById('auth-login').classList.toggle('hidden',t!=='login');
+  document.getElementById('auth-signup').classList.toggle('hidden',t!=='signup');
+  document.getElementById('auth-title').textContent=t==='login'?'Bentornato':'Crea il tuo 24';
+  document.getElementById('auth-subtitle').textContent=t==='login'?'Accedi per continuare. I tuoi dati restano tuoi.':'Registrati in 30 secondi. Niente spam, niente vendita di dati.';
+}
+function togglePw(id,btn){
+  const i=document.getElementById(id);
+  if(i.type==='password'){i.type='text';btn.textContent='🙈'}
+  else{i.type='password';btn.textContent='👁'}
+}
+function pwScore(p){
+  let s=0;
+  if(p.length>=8)s++;
+  if(/[A-Z]/.test(p))s++;
+  if(/[0-9]/.test(p))s++;
+  if(/[^A-Za-z0-9]/.test(p))s++;
+  if(p.length>=12)s++;
+  return Math.min(s,4);
+}
+function updatePwStrength(){
+  const p=document.getElementById('su-pw').value;
+  const s=pwScore(p);
+  const bar=document.getElementById('su-pw-bar');
+  const hint=document.getElementById('su-pw-hint');
+  const colors=['#FF3B30','#FF9500','#FFD60A','#34C759','#34C759'];
+  const labels=['Troppo debole','Debole','Media','Buona','Eccellente'];
+  bar.style.width=(s*25)+'%';
+  bar.style.background=colors[s];
+  hint.textContent=p?labels[s]:'Min 8 caratteri, una maiuscola, un numero';
+  hint.style.color=p?colors[s]:'rgba(255,255,255,0.5)';
+}
+async function doLogin(){
+  const e=document.getElementById('li-email').value.trim();
+  const p=document.getElementById('li-pw').value;
+  if(!e||!p){showToast('Inserisci email e password');return}
+  if(!/^[^@]+@[^@]+\\.[^@]+$/.test(e)){showToast('Email non valida');return}
+  if(!supa){showToast('Database non disponibile, usa modalità demo');const user={email:e,name:e.split('@')[0],authMethod:'email',joinedAt:Date.now()};finishAuth(user,'Bentornato (demo)');return}
+  showToast('Accesso in corso...');
+  const {data,error}=await supa.auth.signInWithPassword({email:e,password:p});
+  if(error){showToast('Errore: '+error.message);return}
+  const user={email:data.user.email,name:(data.user.user_metadata&&data.user.user_metadata.name)||e.split('@')[0],authMethod:'email',joinedAt:Date.now(),id:data.user.id};
+  finishAuth(user,'Bentornato, '+user.name+'!');
+}
+async function doSignup(){
+  const n=document.getElementById('su-name').value.trim();
+  const e=document.getElementById('su-email').value.trim();
+  const p=document.getElementById('su-pw').value;
+  const dob=document.getElementById('su-dob').value;
+  const tos=document.getElementById('su-tos').checked;
+  if(!n){showToast('Inserisci il tuo nome');return}
+  if(!/^[^@]+@[^@]+\\.[^@]+$/.test(e)){showToast('Email non valida');return}
+  if(pwScore(p)<2){showToast('Password troppo debole');return}
+  if(!dob){showToast('Inserisci la data di nascita');return}
+  const age=Math.floor((Date.now()-new Date(dob).getTime())/(365.25*86400000));
+  if(age<16){showToast('Devi avere almeno 16 anni');return}
+  if(!tos){showToast('Devi accettare termini e privacy');return}
+  if(!supa){showToast('Database non disponibile, usa modalità demo');const user={email:e,name:n,authMethod:'email',joinedAt:Date.now(),dob};finishAuth(user,'Account demo creato');return}
+  showToast('Creazione account...');
+  const {data,error}=await supa.auth.signUp({email:e,password:p,options:{data:{name:n,dob:dob}}});
+  if(error){showToast('Errore: '+error.message);return}
+  if(data.user&&!data.session){
+    alert('✉️ Email di verifica inviata a '+e+'\n\nApri la tua casella di posta (anche spam), clicca il link di conferma, poi torna qui e accedi.');
+    document.querySelector('[data-tab="login"]').click();
+    document.getElementById('li-email').value=e;
+    return;
+  }
+  const user={email:e,name:n,authMethod:'email',joinedAt:Date.now(),dob,id:data.user&&data.user.id};
+  finishAuth(user,'Benvenuto, '+n+'!');
+}
+async function doSSO(provider){
+  if(!supa){showToast(provider+' OAuth richiede database. Modalità demo:');const user={email:'demo@'+provider.toLowerCase()+'.com',name:'Demo '+provider,authMethod:provider.toLowerCase(),joinedAt:Date.now()};finishAuth(user,'Demo '+provider);return}
+  const map={'Apple':'apple','Google':'google'};
+  const {error}=await supa.auth.signInWithOAuth({provider:map[provider]||provider.toLowerCase(),options:{redirectTo:window.location.origin}});
+  if(error){showToast('OAuth: '+error.message+' — provider non ancora configurato in Supabase')}
+}
+function finishAuth(user,msg){
+  state.user=user;
+  try{localStorage.setItem('24h_auth',JSON.stringify(user))}catch(e){}
+  document.getElementById('scr-auth').classList.remove('active');
+  updateAccountUI();
+  showToast(msg);
+  if(!localStorage.getItem('24h_tour'))setTimeout(startTour,400);
+  switchTab('map');
+}
+async function doLogout(){
+  if(!confirm('Vuoi uscire? Lo stato locale rimane salvato.'))return;
+  if(supa){await supa.auth.signOut()}
+  state.user=null;
+  localStorage.removeItem('24h_auth');
+  showToast('Disconnesso');
+  document.getElementById('scr-auth').classList.add('active');
+  switchTab('map');
+}
+function updateAccountUI(){
+  const el=document.getElementById('ac-email');
+  if(el&&state.user)el.textContent=state.user.email;
+}
+function toggle2FA(){
+  state.has2FA=!state.has2FA;
+  document.getElementById('2fa-sw').classList.toggle('on',state.has2FA);
+  showToast(state.has2FA?'2FA attivato (SMS al numero salvato)':'2FA disattivato');
+}
+function togglePrivate(){
+  state.isPrivate=!state.isPrivate;
+  document.getElementById('priv-sw').classList.toggle('on',state.isPrivate);
+  showToast(state.isPrivate?'Modalità privata attiva':'Modalità privata disattivata');
+}
+function showSessions(){
+  alert('Sessioni attive:\\n\\n• iPhone 15 Pro · Bologna · ora\\n• MacBook Air · Modena · 2h fa\\n• Safari iPad · Sassuolo · ieri\\n\\nIn app reale: puoi disconnettere ogni dispositivo singolarmente.');
+}
+function showLocationPrivacy(){
+  alert('Posizione GPS — come funziona:\\n\\n• Viene letta SOLO quando apri una casella\\n• Mai conservata sui nostri server\\n• Mai condivisa con terze parti\\n• Mai usata per pubblicità\\n\\nQuando sblocchi una casella, il server registra solo: utente, casella, timestamp. Le coordinate vengono scartate.');
+}
+function showYourData(){
+  alert('I tuoi dati salvati:\\n\\n• Email + nome (per autenticazione)\\n• Lista caselle sbloccate (con data, non posizione)\\n• Contenuti che hai pubblicato\\n• Preferenze app (tema, vista mappa)\\n• Log accessi (90 giorni, poi cancellati)\\n\\nCosa NON salviamo:\\n• Le coordinate del tuo GPS\\n• Cronologia di posizione\\n• Contatti del tuo telefono\\n• Dati di altre app');
+}
+function downloadData(){showToast('Esportazione dati in JSON inviata via email (demo)')}
+function confirmDeleteAccount(){
+  if(!confirm('Eliminare definitivamente l\'account?\\n\\nQuesta azione:\\n• Cancella tutti i tuoi contenuti\\n• Rimuove sessioni attive\\n• Anonimizza il tuo storico (GDPR)\\n• Non è reversibile\\n\\nProcedere?'))return;
+  state.user=null;
+  localStorage.removeItem('24h_auth');
+  showToast('Account eliminato. I dati saranno rimossi entro 30 giorni.');
+  setTimeout(()=>{document.getElementById('scr-auth').classList.add('active');switchTab('map')},1200);
+}
+function showLegal(type){
+  if(type==='tos'){
+    alert('Termini di servizio — sintesi:\\n\\n1. Età minima 16 anni\\n2. Niente contenuti illegali, hate, spam\\n3. Niente bot, niente fake GPS\\n4. Sei responsabile di ciò che pubblichi\\n5. Possiamo sospendere account abusivi\\n6. La piena versione legale è disponibile in app');
+  }else{
+    alert('Privacy Policy — sintesi:\\n\\n1. Dati raccolti: email, nome, contenuti, log\\n2. Posizione GPS: solo runtime, mai salvata\\n3. Server in UE (Frankfurt), GDPR compliant\\n4. Crittografia end-to-end sulle credenziali\\n5. Diritti GDPR: accesso, rettifica, cancellazione, portabilità\\n6. Niente vendita dati a terzi\\n7. Cookies essenziali solo\\n\\nLa piena versione legale sarà accessibile dall\'app finale.');
+  }
+}
+
+let tTo;
+function showToast(m,d){d=d||2000;const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tTo);tTo=setTimeout(()=>t.classList.remove('show'),d)}
+
+let map,umk,mks={};
+
+function mapFallback(){
+  const md=document.getElementById('map');if(!md)return;
+  md.innerHTML='<div style="position:absolute;inset:0;background:linear-gradient(135deg,#16213e,#0f3460);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:30px;text-align:center"><div style="font-size:42px;margin-bottom:12px">🗺️</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">Mappa offline</div><div style="font-size:12px;color:rgba(255,255,255,0.7);max-width:240px;line-height:1.4">L\'app funziona — apri il pannello in basso per vedere e usare le caselle.</div></div>';
+  document.getElementById('sheet').classList.add('exp');state.sheetExp=true;
+}
+
+function initMap(){
+  if(map)return;
+  if(typeof L==='undefined'||window.__lfail){mapFallback();return}
+  try{
+    const c=CITIES[state.city];
+    map=L.map('map',{zoomControl:false,attributionControl:true,fadeAnimation:false}).setView([c.lat,c.lon],c.z);
+    window.__tileStreet=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM · CARTO',maxZoom:19,updateWhenIdle:true,keepBuffer:2});window.__tileSatBase=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri · Maxar · Earthstar Geographics',maxZoom:19,updateWhenIdle:true,keepBuffer:2});window.__tileSatLabels=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{attribution:'© CARTO',maxZoom:19,updateWhenIdle:true,keepBuffer:2});window.__tileSat=L.layerGroup([window.__tileSatBase,window.__tileSatLabels]);(state.mapView==='satellite'?window.__tileSat:window.__tileStreet).addTo(map);
+    const ui=L.divIcon({className:'',html:'<div class="umark"><div class="halo"></div><div class="dot"></div></div>',iconSize:[20,20],iconAnchor:[10,10]});
+    umk=L.marker([state.userLat,state.userLon],{icon:ui,zIndexOffset:1000}).addTo(map);
+    renderMapMarkers(state.city);
+    map.on('click',()=>{closeSheet();document.getElementById('cpicker').classList.remove('open')});
+  }catch(e){console.error('Map err:',e);mapFallback()}
+}
+
+function renderMapMarkers(city){
+  if(!map)return;
+  for(const id in mks){map.removeLayer(mks[id])}
+  mks={};
+  const hotIds=new Set(Object.entries(CASELLE).filter(([_,c])=>c.city===city&&c.live).sort((a,b)=>b[1].count-a[1].count).slice(0,2).map(([id])=>id));
+  Object.entries(CASELLE).forEach(([id,c])=>{
+    if(c.city!==city)return;
+    const hot=hotIds.has(id);
+    const html='<div class="cmark '+(hot?'hot':'')+'" style="color:'+c.c1+'"><div class="pin"><span>'+c.emoji+'</span><div class="ct">'+c.count+'</div></div></div>';
+    const icon=L.divIcon({className:'',html,iconSize:[48,48],iconAnchor:[24,24]});
+    const m=L.marker([c.lat,c.lon],{icon}).addTo(map);
+    m.on('click',()=>openCasella(id));
+    mks[id]=m;
+  });
+}
+
+function dist(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dL=r(lat2-lat1),dN=r(lon2-lon1),a=Math.sin(dL/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dN/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+
+function isUnlocked(id){if(state.isOrg)return true;const c=CASELLE[id];if(!c)return false;const d=dist(state.userLat,state.userLon,c.lat,c.lon);if(d<=c.radius)return true;if(state.unlocked[id])return(Date.now()-state.unlocked[id])<86400000;return false}
+
+function distTo(id){return Math.round(dist(state.userLat,state.userLon,CASELLE[id].lat,CASELLE[id].lon))}
+function fmtD(m){return m<1000?Math.round(m)+'m':(m/1000).toFixed(1)+' km'}
+
+function toggleCityPicker(e){if(e)e.stopPropagation();document.getElementById('cpicker').classList.toggle('open')}
+
+function selectCity(k){
+  state.city=k;saveState();
+  document.getElementById('cpicker').classList.remove('open');
+  document.getElementById('city-name').textContent=CITIES[k].n;
+  document.querySelectorAll('.copt').forEach(el=>el.classList.toggle('active',el.dataset.city===k));
+  if(map){const c=CITIES[k];map.flyTo([c.lat,c.lon],c.z,{duration:0.8});renderMapMarkers(k)}
+  renderDemoBtns();renderNearby();showToast(CITIES[k].e+' '+CITIES[k].n);
+}
+
+function renderDemoBtns(){
+  const c=document.getElementById('dbtns');
+  const o=SIMOPTS[state.city]||[];
+  c.innerHTML=o.map(x=>'<button class="db" data-loc="'+x.k+'" onclick="simLoc(\''+x.k+'\')">'+x.e+' '+x.l+'</button>').join('')+'<button class="db" data-loc="far" onclick="simLoc(\'far\')">🏠 Lontano</button>';
+  document.querySelectorAll('.db').forEach(b=>b.classList.toggle('active',b.dataset.loc===state.userLoc));
+}
+
+function simLoc(k){
+  let lat,lon,name;
+  if(k==='far'){lat=FAR.lat;lon=FAR.lon;name=FAR.name}else{const c=CASELLE[k];if(!c)return;lat=c.lat;lon=c.lon;name=c.name;if(c.city!==state.city){state.city=c.city;document.getElementById('city-name').textContent=CITIES[c.city].n;document.querySelectorAll('.copt').forEach(el=>el.classList.toggle('active',el.dataset.city===c.city));renderDemoBtns();if(map)renderMapMarkers(c.city)}}
+  state.userLat=lat;state.userLon=lon;state.userLoc=k;saveState();
+  if(umk)umk.setLatLng([lat,lon]);
+  if(map)map.flyTo([lat,lon],k==='far'?10:16,{duration:0.6});
+  updateStatus();renderNearby();
+  document.querySelectorAll('.db').forEach(b=>b.classList.toggle('active',b.dataset.loc===k));
+  showToast('Sei a: '+name);
+  if(state.currentC)renderModal(state.currentC);
+}
+
+function updateStatus(){
+  const t=document.getElementById('mstext'),s=document.getElementById('mstatus');
+  let i=null;
+  Object.values(CASELLE).forEach(c=>{if(dist(state.userLat,state.userLon,c.lat,c.lon)<=c.radius)i=c});
+  if(i){t.textContent='Sei a '+i.name;s.classList.remove('away')}else{t.textContent='Cerca un luogo vicino';s.classList.add('away')}
+}
+
+function toggleSheet(){const s=document.getElementById('sheet');s.classList.toggle('exp');state.sheetExp=s.classList.contains('exp')}
+function closeSheet(){document.getElementById('sheet').classList.remove('exp');state.sheetExp=false}
+
+function renderNearby(){
+  const list=document.getElementById('nlist');
+  const cc=Object.entries(CASELLE).filter(([_,c])=>c.city===state.city);
+  const groups={};
+  cc.forEach(([id,c])=>{const cat=c.category||'centro';if(!groups[cat])groups[cat]=[];groups[cat].push({id,...c,d:dist(state.userLat,state.userLon,c.lat,c.lon)})});
+  for(const cat in groups)groups[cat].sort((a,b)=>a.name.localeCompare(b.name));
+  const live=cc.filter(([_,c])=>c[1]?c[1].live:c.live).length;
+  const liveCount=cc.filter(([_,c])=>c.live).length;
+  document.getElementById('shcount').textContent=liveCount+' live · '+cc.length+' totali';
+  document.getElementById('shtitle').textContent='Caselle a '+CITIES[state.city].n;
+  let html='';
+  for(const cat of CAT_ORDER){
+    if(!groups[cat]||!groups[cat].length)continue;
+    html+='<div class="cat-h">'+CAT_NAMES[cat]+' · '+groups[cat].length+'</div>';
+    for(const c of groups[cat]){
+      const u=isUnlocked(c.id);
+      html+='<div class="nc" onclick="openCasella(\''+c.id+'\')"><div class="ni" style="background:linear-gradient(135deg,'+c.c1+','+c.c2+')">'+c.emoji+(u?'':'<div class="nl">🔒</div>')+'</div><div class="nb"><div class="nt">'+c.name+'</div><div class="nm">'+(c.live?'<span class="lv">LIVE</span>':'')+'<span>'+c.count+' contenuti · '+fmtD(c.d)+'</span></div></div><div class="ar">›</div></div>';
+    }
+  }
+  list.innerHTML=html;
+}
+
+function openCasella(id){state.currentC=id;renderModal(id);document.getElementById('modal-c').classList.add('open');closeSheet()}
+function closeCasella(){document.getElementById('modal-c').classList.remove('open');state.currentC=null}
+
+function renderModal(id){
+  const c=CASELLE[id],h=document.getElementById('mhdr'),b=document.getElementById('mbody'),fab=document.getElementById('fab');
+  const u=isUnlocked(id),d=distTo(id);
+  h.style.background='linear-gradient(135deg,'+c.c1+','+c.c2+')';
+  h.innerHTML='<button class="mclose" onclick="closeCasella()">✕</button><div class="pt">'+c.type+'</div><h2>'+c.name+'</h2><div class="meta"><span>📍 '+c.count+' contenuti</span>'+(c.live?'<span style="color:#FFD60A">🔴 LIVE</span>':'')+'<span>'+c.stories.length+' stories</span></div>'+(!u?'<div class="lock"><div class="li">🔒</div><h3>Casella bloccata</h3><p>Devi essere fisicamente qui per vedere e pubblicare contenuti.</p><div class="pstrip">'+c.posts.slice(0,4).map(p=>'<div style="background:linear-gradient(135deg,'+p.c1+','+p.c2+')"></div>').join('')+'</div><div class="dpill">📏 '+fmtD(d)+' di distanza</div><div class="acts"><button class="cta" onclick="simulateUnlock(\''+id+'\')">Simula sono qui (demo)</button><button class="cta ghost" onclick="closeCasella()">Annulla</button></div></div>':'');
+  if(u){
+    fab.classList.remove('hidden');
+    b.innerHTML='<div class="tabs"><div class="tabp active">Tutti</div><div class="tabp">Foto</div><div class="tabp">Messaggi</div><div class="tabp">Stories</div></div>'+(c.stories.length>0?'<div class="srow"><div class="sb-i add" onclick="openComposer()"><div class="rng"><div class="inr">+</div></div><div class="nm">Tua story</div></div>'+c.stories.map(s=>'<div class="sb-i"><div class="rng"><div class="inr" style="--c1:'+s.c1+';--c2:'+s.c2+'">'+s.u+'</div></div><div class="nm">'+s.n+'</div></div>').join('')+'</div>':'')+'<div>'+c.posts.map((p,i)=>renderPost(id,c,p,i)).join('')+'</div>';
+  }else{fab.classList.add('hidden');b.innerHTML=''}
+}
+
+function renderPost(cid,c,p,i){
+  const h='<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+  const cm='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+  return '<div class="post"><div class="phead"><div class="pav" style="--c1:'+p.c1+';--c2:'+p.c2+'">'+p.a+'</div><div class="pu"><div class="pun">'+p.u+'</div><div class="pts">'+p.time+' fa · 📍 '+c.name+'</div></div><div class="pmore">⋯</div></div>'+(p.t==='photo'?'<div class="pimg" style="--c1:'+p.c1+';--c2:'+p.c2+'"><div class="pbadge">📍 Dal posto</div><span class="pemoji">'+p.emoji+'</span></div>':'')+(p.t==='message'?'<div class="ptxt">'+p.text+'</div>':'')+'<div class="pacts"><div class="pa '+(p.liked?'active':'')+'" id="lk-'+cid+'-'+i+'" onclick="toggleLike(\''+cid+'\','+i+')">'+h+'<span id="lc-'+cid+'-'+i+'">'+p.likes+'</span></div><div class="pa">'+cm+'<span>Rispondi</span></div></div></div>';
+}
+
+function toggleLike(cid,i){
+  const p=CASELLE[cid].posts[i];p.liked=!p.liked;p.likes+=p.liked?1:-1;
+  const b=document.getElementById('lk-'+cid+'-'+i),c=document.getElementById('lc-'+cid+'-'+i);
+  if(b)b.classList.toggle('active',p.liked);if(c)c.textContent=p.likes;
+}
+
+function simulateUnlock(id){
+  const c=CASELLE[id];
+  state.userLat=c.lat;state.userLon=c.lon;state.userLoc=id;
+  if(c.city!==state.city){state.city=c.city;document.getElementById('city-name').textContent=CITIES[c.city].n;document.querySelectorAll('.copt').forEach(el=>el.classList.toggle('active',el.dataset.city===c.city));renderDemoBtns();if(map)renderMapMarkers(c.city)}
+  if(umk)umk.setLatLng([c.lat,c.lon]);
+  state.unlocked[id]=Date.now();saveState();
+  requestAnimationFrame(()=>{renderModal(id);updateStatus();renderNearby()});
+  showToast('Casella sbloccata! Hai 24 ore.');
+}
+
+function openComposer(){if(!state.currentC)return;const c=CASELLE[state.currentC];document.getElementById('cpname').textContent=c.name;document.getElementById('cloc').textContent='Pubblichi da: '+c.name;document.getElementById('ctxt').value='';setCT('photo');document.getElementById('comp').classList.add('open')}
+function closeComposer(){document.getElementById('comp').classList.remove('open')}
+function setCT(t){state.ct=t;document.querySelectorAll('.ct').forEach(el=>el.classList.toggle('active',el.dataset.t===t));const pa=document.getElementById('carea'),tx=document.getElementById('ctxt');if(t==='photo'||t==='story'){pa.style.display='block';tx.placeholder='Aggiungi una didascalia (opzionale)'}else{pa.style.display='none';tx.placeholder='Scrivi un messaggio per questo posto...'}}
+
+function submitPost(){
+  const tx=document.getElementById('ctxt').value.trim(),t=state.ct;
+  if(t==='message'&&!tx){showToast('Scrivi qualcosa prima');return}
+  const c=CASELLE[state.currentC];
+  c.posts.unshift({t:t==='message'?'message':'photo',u:'gabri',a:'G',c1:'#5856D6',c2:'#007AFF',time:'ora',emoji:t!=='message'?['📸','🌅','🎉','✨','🍕'][Math.floor(Math.random()*5)]:null,text:tx||null,likes:0,liked:false});
+  c.count++;closeComposer();renderModal(state.currentC);showToast('Pubblicato! 🎉');
+}
+
+function switchTab(n){
+  let t=document.getElementById('scr-'+n);
+  if(!t){n='map';t=document.getElementById('scr-map')}
+  state.scr=n;
+  document.querySelectorAll('.screen').forEach(s=>{if(s.id!=='scr-onb')s.classList.remove('active')});
+  if(t)t.classList.add('active');
+  document.querySelectorAll('.ti').forEach(x=>x.classList.toggle('active',x.dataset.s===n));
+  document.getElementById('status-bar').classList.toggle('dark',n==='exp');
+  document.getElementById('tb').classList.toggle('dark',n==='exp');
+  document.getElementById('dtool').classList.toggle('hidden',n!=='map');var __vt=document.getElementById('vtoggle');if(__vt)__vt.classList.toggle('hidden',n!=='map');
+  if(n==='map'&&map)setTimeout(()=>map.invalidateSize(),50);
+  if(n==='exp')renderExplore();
+}
+
+function renderExplore(){
+  const list=document.getElementById('elist');
+  const sorted=Object.entries(CASELLE).map(([id,c])=>({id,...c})).sort((a,b)=>b.count-a.count);
+  list.innerHTML=sorted.map((c,i)=>'<div class="ec" style="--c1:'+c.c1+';--c2:'+c.c2+'" onclick="openCasella(\''+c.id+'\')"><div class="er"><div class="et">'+(i===0?'🔥 HOTTEST':c.live?'LIVE':'ATTIVO')+'</div><div class="ecit">'+CITIES[c.city].e+' '+CITIES[c.city].n+'</div></div><div class="eti">'+c.emoji+' '+c.name+'</div><div class="em"><span>'+c.count+' contenuti</span><span>'+c.stories.length+' stories</span></div></div>').join('');
+}
+
+function toggleOrg(){
+  state.isOrg=!state.isOrg;saveState();applyOrgUI();
+  if(state.currentC)renderModal(state.currentC);
+  renderNearby();
+  showToast(state.isOrg?'👑 Modalità Organizzatore attivata':'Modalità Organizzatore disattivata');
+}
+function toggleMapView(){if(!map)return;if(state.mapView==='satellite'){map.removeLayer(window.__tileSat);window.__tileStreet.addTo(map);state.mapView='street';}else{map.removeLayer(window.__tileStreet);window.__tileSat.addTo(map);state.mapView='satellite';}saveState();const b=document.getElementById('vtoggle');if(b){b.textContent=state.mapView==='street'?'🛰️':'🗺️';b.classList.toggle('sat',state.mapView==='satellite')}showToast(state.mapView==='satellite'?'Vista satellitare attiva':'Vista mappa attiva',1500);}
+
+function applyOrgUI(){
+  const sw=document.getElementById('orgsw'),cr=document.getElementById('crown'),pl=document.getElementById('opill');
+  if(state.isOrg){sw.classList.add('on');cr.classList.remove('hidden');pl.classList.add('show')}
+  else{sw.classList.remove('on');cr.classList.add('hidden');pl.classList.remove('show')}
+}
+
+const TOUR=[
+{h:'Benvenuto in 24 👋',p:'Demo interattiva del social geolocalizzato. Vedi i contenuti di un luogo solo se ci sei fisicamente. Tour veloce.'},
+{h:'Scegli la città 🍝🏎️🟢',p:'In alto della mappa tocca il pin "Bologna" per cambiare città. Bologna, Modena e Sassuolo hanno caselle proprie.'},
+{h:'Tocca un pin',p:'I cerchi colorati sono le caselle. Più caldi = più contenuti freschi. Quelli pulsanti hanno attività live.'},
+{h:'Sblocca solo se sei lì 🔒',p:'Da lontano vedi solo anteprima sfocata. Usa "Simula posizione" in basso a sinistra per testare lo sblocco.'},
+{h:'Modalità Organizzatore 👑',p:'Dal Profilo attivi l\'accesso a tutte le caselle senza GPS. Utile per testare l\'app o presentarla.'},
+{h:'Pubblica e interagisci',p:'Dentro una casella sbloccata: scrolla il feed, metti like, tocca il + blu per pubblicare. Hai 24 ore.'},
+{h:'Sei pronto 🎉',p:'Esplora liberamente. Trovi il tour dal pulsante "i" in alto a destra. Buon viaggio!'}
+];
+let tStep=0;
+function startTour(){tStep=0;document.getElementById('tov').classList.add('open');renderTour()}
+function renderTour(){
+  const card=document.getElementById('tc'),s=TOUR[tStep],last=tStep===TOUR.length-1;
+  const dots=TOUR.map((_,i)=>'<div class="td '+(i===tStep?'active':'')+'"></div>').join('');
+  card.innerHTML='<div class="stp">PASSO '+(tStep+1)+' / '+TOUR.length+'</div><h3>'+s.h+'</h3><p>'+s.p+'</p><div class="dts">'+dots+'</div><div class="acts">'+(tStep>0?'<button class="skip" onclick="prevTour()">Indietro</button>':'<button class="skip" onclick="endTour()">Salta</button>')+'<button class="next" onclick="'+(last?'endTour()':'nextTour()')+'">'+(last?'Inizia':'Avanti')+'</button></div>';
+}
+function nextTour(){tStep++;renderTour()}
+function prevTour(){tStep--;renderTour()}
+function endTour(){document.getElementById('tov').classList.remove('open');localStorage.setItem('24h_tour','1')}
+
+function copyShare(){
+  const m='Ciao! Ti mando il prototipo di 24, il social geolocalizzato che sto costruendo. Provalo direttamente nel browser.';
+  if(navigator.clipboard){navigator.clipboard.writeText(m).then(()=>showToast('Messaggio copiato')).catch(()=>showToast('Invia il file .html'))}else{showToast('Invia il file .html')}
+}
+
+function resetDemo(){
+  if(!confirm('Reset della demo?'))return;
+  localStorage.removeItem('24h_state');localStorage.removeItem('24h_onb');localStorage.removeItem('24h_tour');
+  location.reload();
+}
+
+window.addEventListener('load',()=>{
+  initMap();
+  document.getElementById('city-name').textContent=CITIES[state.city].n;
+  document.querySelectorAll('.copt').forEach(el=>el.classList.toggle('active',el.dataset.city===state.city));
+  renderDemoBtns();renderNearby();updateStatus();applyOrgUI();var __vtb=document.getElementById('vtoggle');if(__vtb){__vtb.textContent=state.mapView==='street'?'🛰️':'🗺️';__vtb.classList.toggle('sat',state.mapView==='satellite')}
+  switchTab(state.scr||'map');
+});
+
+document.addEventListener('click',(e)=>{
+  const p=document.getElementById('cpicker');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.cpill'))p.classList.remove('open');
+});
+
+let tsY=0;const sh=document.getElementById('sheet');
+sh.addEventListener('touchstart',(e)=>{tsY=e.touches[0].clientY},{passive:true});
+sh.addEventListener('touchmove',(e)=>{const dy=e.touches[0].clientY-tsY;if(dy>50&&state.sheetExp){closeSheet();tsY=e.touches[0].clientY}else if(dy<-50&&!state.sheetExp){sh.classList.add('exp');state.sheetExp=true;tsY=e.touches[0].clientY}},{passive:true});
+</script>
+</body>
+</html>
